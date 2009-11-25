@@ -1,13 +1,19 @@
 package org.apache.camel.component.zookeeper;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.camel.test.CamelTestSupport;
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
@@ -18,11 +24,9 @@ public class ZookeeperComponentTest extends CamelTestSupport {
 
     public static TestZookeeperServer zookeeper;
 
-    private static int clientPort = 39700;
+    private static int clientPort = 2181;
 
     private static int sessionTimeout = 5000;
-
-
 
     @BeforeClass
     public static void startZookeeperServer() throws Exception {
@@ -36,9 +40,14 @@ public class ZookeeperComponentTest extends CamelTestSupport {
 
 
     public synchronized void testSimpleConnection() throws Exception {
-        startZookeeperServer();
+        // startZookeeperServer();
         TestClient cl = new TestClient();
         cl.addData("/camel", "This is a test");
+
+        TestClient reader = new TestClient();
+        String data = new String(cl.waitForNodeChange("/camel"));
+        System.err.println(data);
+
         wait();
     }
 
@@ -74,10 +83,23 @@ public class ZookeeperComponentTest extends CamelTestSupport {
 
     public static class TestClient implements Watcher {
 
+        private final Logger log = Logger.getLogger(getClass());
+
         private ZooKeeper zk;
+
+        private Map<String, CountDownLatch> nodeLatches = new HashMap<String, CountDownLatch>();
+
+        private CountDownLatch connected = new CountDownLatch(1);
 
         public TestClient() throws Exception {
             zk = new ZooKeeper("localhost:" + clientPort, sessionTimeout, this);
+            connected.await();
+        }
+
+        public byte[] waitForNodeChange(String node) throws Exception{
+            Stat stat = new Stat();
+            byte[] data = zk.getData(node, this, stat);
+            return data;
         }
 
         public void stop() throws Exception {
@@ -85,11 +107,27 @@ public class ZookeeperComponentTest extends CamelTestSupport {
         }
 
         public void addData(String znode, String data) throws Exception {
-            zk.create(znode, data.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+            String created = zk.create(znode, data.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            if(log.isInfoEnabled())
+            {
+                log.info(String.format("Created znode named '%s'", created));
+            }
         }
 
         public void process(WatchedEvent event) {
-            System.err.println(event.toString());
+
+            if(event.getState() == KeeperState.SyncConnected){
+                if(log.isInfoEnabled())
+                {
+                    log.info("TestClient connected");
+                }
+                connected.countDown();
+            }
+            else
+            {
+                System.err.println(event.toString());
+            }
+
         }
     }
 }
