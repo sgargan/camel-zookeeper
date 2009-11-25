@@ -22,18 +22,29 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
 
 /**
- * Represents the component that manages {@link ZookeeperEndpoint}. It holds the
- * list of named direct endpoints.
- *
- * @version
+ * Represents the component that manages {@link ZookeeperEndpoint}s.
+ *  
+ * @version $
  */
+@SuppressWarnings("unchecked")
 public class ZookeeperComponent extends DefaultComponent {
 
+    private ZookeeperConfiguration configuration;
+    
     protected Endpoint createEndpoint(String uri, String remaining, Map parameters) throws Exception {
-        Endpoint endpoint = new ZookeeperEndpoint(uri, this);
+        ZookeeperConfiguration config = getConfiguration();        
+        Endpoint endpoint = new ZookeeperEndpoint(uri, this, config.copy());
         setProperties(endpoint, parameters);
         return endpoint;
     }
 
+    public ZookeeperConfiguration getConfiguration()
+    {
+        if(configuration == null)
+        {
+            configuration = new ZookeeperConfiguration();
+        }
+        return configuration;
+    }
 
 }

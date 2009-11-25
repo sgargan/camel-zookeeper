@@ -22,13 +22,15 @@ import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.springframework.jmx.export.annotation.ManagedAttribute;
 
 public class ZookeeperEndpoint extends DefaultEndpoint {
     private static final Log LOG = LogFactory.getLog(ZookeeperEndpoint.class);
+    private ZookeeperConfiguration configuration;
 
-    public ZookeeperEndpoint(String uri, ZookeeperComponent component) {
+    public ZookeeperEndpoint(String uri, ZookeeperComponent component, ZookeeperConfiguration configuration) {
         super(uri, component);
+        this.configuration = configuration;
     }
 
     public Producer createProducer() throws Exception {
@@ -37,5 +39,19 @@ public class ZookeeperEndpoint extends DefaultEndpoint {
 
     public Consumer createConsumer(Processor processor) throws Exception {
         return new ZookeeperConsumer(this, processor);
+    }
+
+    public boolean isSingleton() {
+        return true;
+    }
+
+    public void setConfiguration(ZookeeperConfiguration configuration) {
+        this.configuration = configuration;
+    }
+    
+    @ManagedAttribute
+    public void getTimeout()
+    {
+        
     }
 }

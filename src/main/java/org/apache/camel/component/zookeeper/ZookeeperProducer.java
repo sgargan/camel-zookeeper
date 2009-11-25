@@ -18,7 +18,6 @@
 package org.apache.camel.component.zookeeper;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.impl.DefaultConsumer;
 import org.apache.camel.impl.DefaultProducer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,13 +35,6 @@ public class ZookeeperProducer extends DefaultProducer{
     }
 
     public void process(Exchange exchange) throws Exception {
-        if (endpoint.getConsumers().isEmpty()) {
-            LOG.warn("No getConsumers() available on " + this + " for " + exchange);
-        }
-        else {
-            for (DefaultConsumer consumer : endpoint.getConsumers()) {
-                consumer.getProcessor().process(exchange);
-            }
-        }
+
     }
 }
