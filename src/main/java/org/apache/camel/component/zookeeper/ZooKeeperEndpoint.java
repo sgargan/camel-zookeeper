@@ -16,42 +16,73 @@
  */
 package org.apache.camel.component.zookeeper;
 
+import java.util.List;
+
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 
-public class ZookeeperEndpoint extends DefaultEndpoint {
-    private static final Log LOG = LogFactory.getLog(ZookeeperEndpoint.class);
-    private ZookeeperConfiguration configuration;
+public class ZooKeeperEndpoint extends DefaultEndpoint {
+    private ZooKeeperConfiguration configuration;
+    private ZooKeeperConnectionManager connectionManager;
 
-    public ZookeeperEndpoint(String uri, ZookeeperComponent component, ZookeeperConfiguration configuration) {
+    public ZooKeeperEndpoint(String uri, ZooKeeperComponent component, ZooKeeperConfiguration configuration) {
         super(uri, component);
         this.configuration = configuration;
+        this.connectionManager = new ZooKeeperConnectionManager(this);
     }
 
     public Producer createProducer() throws Exception {
-        return new ZookeeperProducer(this);
+        return null;//new ZookeeperProducer(this);
     }
 
     public Consumer createConsumer(Processor processor) throws Exception {
-        return new ZookeeperConsumer(this, processor);
+        return new ZooKeeperConsumer(this, processor);
     }
 
     public boolean isSingleton() {
         return true;
     }
 
-    public void setConfiguration(ZookeeperConfiguration configuration) {
+    public void setConfiguration(ZooKeeperConfiguration configuration) {
         this.configuration = configuration;
     }
-    
-    @ManagedAttribute
-    public void getTimeout()
+
+    public ZooKeeperConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    ZooKeeperConnectionManager getConnectionManager()
     {
-        
+        return connectionManager;
+    }
+
+    @ManagedAttribute
+    public int getTimeout() {
+        return getConfiguration().getTimeout();
+    }
+
+    public void setTimeout(int timeout) {
+        getConfiguration().setTimeout(timeout);
+    }
+
+    @ManagedAttribute
+    public List<String> getServers() {
+        return getConfiguration().getServers();
+    }
+
+    public void setServers(List<String> servers) {
+        getConfiguration().setServers(servers);
+    }
+
+    @ManagedAttribute
+    public boolean shouldReuseConnection() {
+        return getConfiguration().shouldReuseConnection();
+    }
+
+    public void setReuseConnection(boolean reuseConnection) {
+        getConfiguration().setReuseConnection(reuseConnection);
     }
 }

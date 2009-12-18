@@ -20,25 +20,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.camel.RuntimeCamelException;
+import org.apache.camel.util.StringHelper;
 
 /**
  * <code>ZookeeperConfiguration</code> encapsulates the configuration that may
- * be applied to a {@link ZookeeperComponent} and inherited by the
- * {@link ZookeeperEndpoint}s it creates.
- * 
+ * be applied to a {@link ZooKeeperComponent} and inherited by the
+ * {@link ZooKeeperEndpoint}s it creates.
+ *
  * @version $
  */
-public class ZookeeperConfiguration implements Cloneable {
+public class ZooKeeperConfiguration implements Cloneable {
 
-    private int timeout;
+    private int timeout = 5000;
     private List<String> servers;
     private boolean reuseConnection = true;
+    private boolean changed;
+    private int sessionId;
+    private byte[] password;
+    private String path;
+    private boolean watch;
 
     public void addZookeeperServer(String server) {
         if (servers == null) {
             servers = new ArrayList<String>();
         }
         servers.add(server);
+        changed = true;
     }
 
     public List<String> getServers() {
@@ -55,6 +62,7 @@ public class ZookeeperConfiguration implements Cloneable {
 
     public void setReuseConnection(boolean reuseConnection) {
         this.reuseConnection = reuseConnection;
+        changed = true;
     }
 
     public int getTimeout() {
@@ -63,14 +71,53 @@ public class ZookeeperConfiguration implements Cloneable {
 
     public void setTimeout(int timeout) {
         this.timeout = timeout;
+        changed = true;
     }
 
-    public ZookeeperConfiguration copy() {
+
+    public void clearChanged() {
+        changed = false;
+    }
+
+    public boolean isChanged() {
+        return changed;
+    }
+
+    public String getConnectString() {
+        return StringHelper.toStringCommaSeparated(servers);
+    }
+
+    public byte[] getSessionPassword() {
+        return password;
+    }
+
+    public int getSessionId(){
+        return sessionId;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public boolean shouldWatch() {
+        return watch;
+    }
+
+    public void setWatch(boolean watch){
+        this.watch = watch;
+    }
+
+    public ZooKeeperConfiguration copy() {
         try {
-            return (ZookeeperConfiguration)clone();
+            return (ZooKeeperConfiguration)clone();
         } catch (CloneNotSupportedException e) {
             throw new RuntimeCamelException(e);
         }
     }
+
 
 }
