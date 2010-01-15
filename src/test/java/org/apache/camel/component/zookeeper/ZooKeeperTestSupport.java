@@ -1,16 +1,27 @@
 package org.apache.camel.component.zookeeper;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.camel.test.junit4.CamelTestSupport;
+import org.apache.camel.util.FileUtil;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -20,87 +31,139 @@ import org.junit.BeforeClass;
 
 public class ZooKeeperTestSupport extends CamelTestSupport {
 
+    private static Logger log = Logger.getLogger(ZooKeeperTestSupport.class);
+
     protected static TestZookeeperServer server;
+    protected static TestZookeeperClient client;
 
     @BeforeClass
     public static void setupTestServer() throws Exception {
-        System.err.println("Starting test server");
-        server = new TestZookeeperServer(getServerPort());
+        log.info("Starting Zookeeper Test Infrastructure");
+        server = new TestZookeeperServer(getServerPort(), clearServerData());
+        waitForServerUp("localhost:"+getServerPort(), 1000);
+        client = new TestZookeeperClient(getServerPort(), getTestClientSessionTimeout());
+        log.info("Started Zookeeper Test Infrastructure");
+    }
+
+    public ZooKeeper getConnection() {
+        return client.getConnection();
     }
 
     @AfterClass
     public static void shutdownServer() throws Exception {
+        log.info("Stopping Zookeeper Test Infrastructure");
+        client.shutdown();
         server.shutdown();
+        waitForServerDown("localhost:"+getServerPort(), 1000);
+        log.info("Stopped Zookeeper Test Infrastructure");
+
     }
 
     protected static int getServerPort() {
         return 39913;
     }
 
-    protected int getTestClientSessionTimeout() {
-        return 5000;
+    protected static int getTestClientSessionTimeout() {
+        return 100000;
+    }
+
+    protected static boolean clearServerData() {
+        return true;
     }
 
     public static class TestZookeeperServer {
         private NIOServerCnxn.Factory connectionFactory;
         private ZooKeeperServer zkServer;
 
-        public TestZookeeperServer(int clientPort) throws Exception {
+        public TestZookeeperServer(int clientPort, boolean clearServerData) throws Exception {
+
+            if (clearServerData) {
+                File working = new File("./target/zookeeper");
+                deleteDir(working);
+                if (working.exists()) {
+                    throw new Exception("Could not delete Test Zookeeper Server working dir ./target/zookeeper");
+                }
+            }
             zkServer = new ZooKeeperServer();
             File dataDir = new File("./target/zookeeper/log");
             File snapDir = new File("./target/zookeeper/data");
-
             FileTxnSnapLog ftxn = new FileTxnSnapLog(dataDir, snapDir);
             zkServer.setTxnLogFactory(ftxn);
-            zkServer.setTickTime(5);
-            connectionFactory = new NIOServerCnxn.Factory(clientPort, 5);
+            zkServer.setTickTime(1000);
+            connectionFactory = new NIOServerCnxn.Factory(clientPort, 0);
             connectionFactory.startup(zkServer);
-
-            while (!zkServer.isRunning()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                }
-            }
         }
 
         public void shutdown() throws Exception {
             connectionFactory.shutdown();
             connectionFactory.join();
-            if (zkServer.isRunning()) {
+            while (zkServer.isRunning()) {
                 zkServer.shutdown();
+                Thread.sleep(100);
             }
         }
     }
 
-    public class TestClient implements Watcher {
+    public static class TestZookeeperClient implements Watcher {
 
         private final Logger log = Logger.getLogger(getClass());
 
         private ZooKeeper zk;
 
         private CountDownLatch connected = new CountDownLatch(1);
+        public static int x;
 
-        public TestClient() throws Exception {
-            zk = new ZooKeeper("localhost:" + getServerPort(), getTestClientSessionTimeout(), this);
+        public TestZookeeperClient(int port, int timeout) throws Exception {
+            zk = new ZooKeeper("localhost:" + port, timeout, this);
             connected.await();
+        }
+
+        public ZooKeeper getConnection() {
+            return zk;
+        }
+
+        public void shutdown() throws Exception {
+            zk.close();
         }
 
         public byte[] waitForNodeChange(String node) throws Exception {
             Stat stat = new Stat();
-            byte[] data = zk.getData(node, this, stat);
-            return data;
+            return zk.getData(node, this, stat);
         }
 
-        public void stop() throws Exception {
-            zk.close();
+
+
+
+
+        public void create(String node, String data) throws Exception {
+            System.err.println(String.format("Creating node '%s' with data '%s' ", node, data));
+            create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         }
 
-        public void addData(String znode, String data) throws Exception {
-            String created = zk.create(znode, data.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        public void create(String znode, String data, List<ACL> access, CreateMode mode) throws Exception {
+            String created = zk.create(znode, data != null ? data.getBytes() : null, access, mode);
             if (log.isInfoEnabled()) {
                 log.info(String.format("Created znode named '%s'", created));
             }
+
+        }
+
+        public Stat setData(String znode, String data, int version) throws Exception
+        {
+           System.err.println("Updating data...");
+           return zk.setData(znode, data.getBytes(), version);
+        }
+
+        public void getData(String znode) throws Exception {
+            zk.getData(znode, false, new DataCallback() {
+
+                public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+                    if (log.isInfoEnabled()) {
+                        log.info(String.format("got data from znode named '%s', '%s'", path, new String(data)));
+                    }
+                }
+            }, this);
+
         }
 
         public void process(WatchedEvent event) {
@@ -111,9 +174,120 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
                 }
                 connected.countDown();
             } else {
-                System.err.println(event.toString());
+
+                if (event.getState() == KeeperState.Disconnected) {
+                    log.info("TestClient connected ?" + zk.getState());
+
+                }
             }
         }
+
+        public void delete(String znode) throws Exception {
+            zk.delete(znode, -1);
+        }
+    }
+
+    // Wait methods are taken directly from the Zookeeper tests. A tests jar
+    // would be nice! Another good reason the keeper folks should move to maven.
+    private static boolean waitForServerUp(String hp, long timeout) {
+        long start = System.currentTimeMillis();
+        while (true) {
+            try {
+                // if there are multiple hostports, just take the first one
+                hp = hp.split(",")[0];
+                String result = send4LetterWord(hp, "stat");
+                if (result.startsWith("Zookeeper version:")) {
+                    return true;
+                }
+            } catch (IOException e) {
+                log.info("server " + hp + " not up " + e);
+            }
+
+            if (System.currentTimeMillis() > start + timeout) {
+                break;
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+        return false;
+    }
+    private static  String send4LetterWord(String hp, String cmd) throws IOException {
+        String split[] = hp.split(":");
+        String host = split[0];
+        int port;
+        try {
+            port = Integer.parseInt(split[1]);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Problem parsing " + hp + e.toString());
+        }
+
+        Socket sock = new Socket(host, port);
+        BufferedReader reader = null;
+        try {
+            OutputStream outstream = sock.getOutputStream();
+            outstream.write(cmd.getBytes());
+            outstream.flush();
+
+            reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            StringBuffer sb = new StringBuffer();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+            return sb.toString();
+        } finally {
+            sock.close();
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
+
+    private static boolean waitForServerDown(String hp, long timeout) {
+        long start = System.currentTimeMillis();
+        while (true) {
+            try {
+                send4LetterWord(hp, "stat");
+            } catch (IOException e) {
+                return true;
+            }
+
+            if (System.currentTimeMillis() > start + timeout) {
+                break;
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+        return false;
+    }
+
+    public static void deleteDir(File f) {
+        LinkedList<File> deleteStack = new LinkedList<File>();
+        deleteStack.addLast(f);
+        deleteDir(deleteStack);
+    }
+
+    private static void deleteDir(Deque<File> deleteStack) {
+        File f = deleteStack.pollLast();
+        if (f != null) {
+            if (f.isDirectory()) {
+                for (File child : f.listFiles()) {
+                    deleteStack.addLast(child);
+                }
+            }
+            deleteDir(deleteStack);
+            FileUtil.deleteFile(f);
+        }
+    }
+
+    public void delay(int wait) throws InterruptedException {
+        Thread.sleep(wait);
     }
 
 }

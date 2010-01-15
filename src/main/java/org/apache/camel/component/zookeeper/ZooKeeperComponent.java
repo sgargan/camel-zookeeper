@@ -47,8 +47,7 @@ public class ZooKeeperComponent extends DefaultComponent {
     }
 
     protected Endpoint createEndpoint(String uri, String remaining, Map parameters) throws Exception {
-        if(getCamelContext() == null)
-        {
+        if (getCamelContext() == null) {
             throw new CamelException("No Camel context has been provided to this zookeeper component");
         }
 
@@ -61,7 +60,7 @@ public class ZooKeeperComponent extends DefaultComponent {
 
     private void extractConfigFromUri(String remaining, ZooKeeperConfiguration config) throws URISyntaxException {
         URI u = new URI(remaining);
-        config.addZookeeperServer(u.getHost()+ (u.getPort() != -1 ? ":"+u.getPort() : ""));
+        config.addZookeeperServer(u.getHost() + (u.getPort() != -1 ? ":" + u.getPort() : ""));
         config.setPath(u.getPath());
     }
 

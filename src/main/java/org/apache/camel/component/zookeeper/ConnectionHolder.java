@@ -69,4 +69,12 @@ public class ConnectionHolder implements Watcher {
         }
         connectionLatch.countDown();
     }
+
+    public void closeConnection() {
+        try {
+            zookeeper.close();
+        } catch (InterruptedException e) {
+           log.error("Error closing zookeeper connection.", e);
+        }
+    }
 }

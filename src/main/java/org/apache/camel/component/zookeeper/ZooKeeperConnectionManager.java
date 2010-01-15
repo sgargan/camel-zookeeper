@@ -34,6 +34,8 @@ public class ZooKeeperConnectionManager {
 
     private interface ZookeeperConnectionStrategy {
         public ConnectionHolder getConnection();
+
+        public void shutdown();
     }
 
     private class ReconfigureableZookeeperConnectionStrategy implements ZookeeperConnectionStrategy {
@@ -49,9 +51,16 @@ public class ZooKeeperConnectionManager {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Reconfiguring Zookeeper connection as configuration has changed to %s", config));
                 }
+                if(holder != null) {
+                    holder.closeConnection();
+                }
                 holder = new ConnectionHolder(config);
             }
             return holder;
+        }
+
+        public void shutdown() {
+            holder.closeConnection();
         }
     }
 
@@ -70,6 +79,15 @@ public class ZooKeeperConnectionManager {
         public ConnectionHolder getConnection(){
             return holder;
         }
+
+        public void shutdown() {
+            holder.closeConnection();
+        }
+
+    }
+
+    public void shutdown() {
+        strategy.shutdown();
     }
 
 }

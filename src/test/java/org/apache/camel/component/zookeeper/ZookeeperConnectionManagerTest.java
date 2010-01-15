@@ -1,6 +1,7 @@
 package org.apache.camel.component.zookeeper;
 
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooKeeper.States;
 import org.junit.Test;
 
 public class ZookeeperConnectionManagerTest extends ZooKeeperTestSupport{
@@ -18,6 +19,7 @@ public class ZookeeperConnectionManagerTest extends ZooKeeperTestSupport{
 
         ZooKeeperConnectionManager zkcm = new ZooKeeperConnectionManager(zep);
         ZooKeeper zk = zkcm.getConnection();
-        assertEquals(zk.getState().CONNECTED, zk.getState());
+        zk.getState();
+        assertEquals(States.CONNECTED, zk.getState());
     }
 }

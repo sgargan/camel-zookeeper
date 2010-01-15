@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.camel.RuntimeCamelException;
-import org.apache.camel.util.StringHelper;
 
 /**
  * <code>ZookeeperConfiguration</code> encapsulates the configuration that may
@@ -38,7 +37,9 @@ public class ZooKeeperConfiguration implements Cloneable {
     private int sessionId;
     private byte[] password;
     private String path;
-    private boolean watch;
+    private boolean awaitCreation = true;
+    private boolean repeat;
+    private boolean listChildren;
 
     public void addZookeeperServer(String server) {
         if (servers == null) {
@@ -74,6 +75,13 @@ public class ZooKeeperConfiguration implements Cloneable {
         changed = true;
     }
 
+    public boolean listChildren() {
+        return listChildren;
+    }
+
+    public void setListChildren(boolean listChildren) {
+        this.listChildren = listChildren;
+    }
 
     public void clearChanged() {
         changed = false;
@@ -84,7 +92,14 @@ public class ZooKeeperConfiguration implements Cloneable {
     }
 
     public String getConnectString() {
-        return StringHelper.toStringCommaSeparated(servers);
+        //return StringHelper.toStringCommaSeparated(servers);
+        StringBuilder b = new StringBuilder();
+        for(String server: servers) {
+            b.append(server).append(",");
+        }
+        b.setLength(b.length() -1);
+        return b.toString();
+
     }
 
     public byte[] getSessionPassword() {
@@ -103,12 +118,12 @@ public class ZooKeeperConfiguration implements Cloneable {
         return path;
     }
 
-    public boolean shouldWatch() {
-        return watch;
+    public boolean shouldRepeat() {
+        return repeat;
     }
 
-    public void setWatch(boolean watch){
-        this.watch = watch;
+    public void setRepeat(boolean repeat){
+        this.repeat = repeat;
     }
 
     public ZooKeeperConfiguration copy() {
@@ -119,5 +134,13 @@ public class ZooKeeperConfiguration implements Cloneable {
         }
     }
 
+    public boolean shouldAwaitExistence() {
+        return awaitCreation;
+    }
+
+    public void setAwaitExistance(boolean awaitCreation)
+    {
+        this.awaitCreation = awaitCreation;
+    }
 
 }

@@ -35,7 +35,7 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
     }
 
     public Producer createProducer() throws Exception {
-        return null;//new ZookeeperProducer(this);
+        return null;// new ZookeeperProducer(this);
     }
 
     public Consumer createConsumer(Processor processor) throws Exception {
@@ -54,8 +54,7 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
         return configuration;
     }
 
-    ZooKeeperConnectionManager getConnectionManager()
-    {
+    ZooKeeperConnectionManager getConnectionManager() {
         return connectionManager;
     }
 
@@ -66,6 +65,15 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
 
     public void setTimeout(int timeout) {
         getConfiguration().setTimeout(timeout);
+    }
+
+    @ManagedAttribute
+    public boolean getRepeat() {
+        return getConfiguration().shouldRepeat();
+    }
+
+    public void setRepeat(boolean shouldRepeat) {
+        getConfiguration().setRepeat(shouldRepeat);
     }
 
     @ManagedAttribute
@@ -84,5 +92,23 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
 
     public void setReuseConnection(boolean reuseConnection) {
         getConfiguration().setReuseConnection(reuseConnection);
+    }
+
+    @ManagedAttribute
+    public boolean shouldListChildren() {
+        return getConfiguration().listChildren();
+    }
+
+    public void setListChildren(boolean listChildren) {
+        getConfiguration().setListChildren(listChildren);
+    }
+
+    @ManagedAttribute
+    public boolean shouldAwaitExistence() {
+        return getConfiguration().shouldAwaitExistence();
+    }
+
+    public void setAwaitExistence(boolean awaitExistence) {
+        getConfiguration().setAwaitExistance(awaitExistence);
     }
 }
