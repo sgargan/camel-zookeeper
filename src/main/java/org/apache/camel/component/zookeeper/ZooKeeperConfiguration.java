@@ -31,6 +31,7 @@ import org.apache.camel.RuntimeCamelException;
 public class ZooKeeperConfiguration implements Cloneable {
 
     private int timeout = 5000;
+    private int backoff = 5000;
     private List<String> servers;
     private boolean reuseConnection = true;
     private boolean changed;
@@ -141,6 +142,14 @@ public class ZooKeeperConfiguration implements Cloneable {
     public void setAwaitExistance(boolean awaitCreation)
     {
         this.awaitCreation = awaitCreation;
+    }
+
+    public long getBackoff() {
+        return backoff;
+    }
+
+    public void setBackoff(int backoff) {
+        this.backoff = backoff;
     }
 
 }
