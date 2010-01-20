@@ -50,7 +50,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         }
 
         initializeConsumer();
-        executor = ExecutorServiceHelper.newFixedThreadPool(1, configuration.getPath() + "-OperationsService", true);
+        executor = ExecutorServiceHelper.newFixedThreadPool(1, format("'%s' Operations executor", configuration.getPath()), true);
         OperationsExecutor OpsService = new OperationsExecutor();
         executor.execute(OpsService);
     }
@@ -99,7 +99,6 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         Exchange e = getEndpoint().createExchange();
         ZooKeeperMessage in = new ZooKeeperMessage(path, result.getStatistics());
         e.setIn(in);
-        //System.err.println("Creating exchange with "+result.getResult());
         if (result.isOk()) {
             in.setBody(result.getResult());
         } else {
@@ -135,7 +134,6 @@ public class ZooKeeperConsumer extends DefaultConsumer {
                 } finally {
                     if (configuration.shouldRepeat()) {
                         try {
-                            log.debug("Reinstating"+current.getClass().getSimpleName());
                             operations.offer(current.createCopy());
                         } catch (Exception e) {
                             e.printStackTrace();
