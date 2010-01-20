@@ -1,7 +1,5 @@
 package org.apache.camel.component.zookeeper.operations;
 
-import static java.lang.String.format;
-
 import java.util.List;
 
 import org.apache.zookeeper.ZooKeeper;
@@ -18,8 +16,15 @@ import org.apache.zookeeper.data.Stat;
  */
 public class ChildrenChangedOperation extends FutureEventDrivenOperation<List<String>> {
 
+    private boolean getChangedListing;
+
     public ChildrenChangedOperation(ZooKeeper connection, String znode) {
+        this(connection, znode, true);
+    }
+
+    public ChildrenChangedOperation(ZooKeeper connection, String znode, boolean getChangedListing) {
         super(connection, znode, EventType.NodeChildrenChanged);
+        this.getChangedListing = getChangedListing;
     }
 
     @Override
@@ -32,20 +37,14 @@ public class ChildrenChangedOperation extends FutureEventDrivenOperation<List<St
 
     @Override
     public OperationResult<List<String>> getResult() {
-        Stat statistics = new Stat();
-        try {
-            List<String> children = connection.getChildren(getNode(), true, statistics);
-            if (log.isDebugEnabled()) {
-                if (log.isTraceEnabled()) {
-                    log.trace(format("Child listing of path '%s' with statistics '%s'\nChildren are: %s ", node, statistics, children));
-                } else {
-                    log.debug(format("Child listing of path '%s'", node));
-                }
-            }
-            return new OperationResult<List<String>>(children, statistics);
-        } catch (Exception e) {
-            return new OperationResult<List<String>>(e);
-        }
+        return getChangedListing ? new GetChildrenOperation(connection, node).getResult() : null;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public ZooKeeperOperation createCopy() throws Exception {
+        ChildrenChangedOperation copy = (ChildrenChangedOperation) super.createCopy();
+        copy.getChangedListing = getChangedListing;
+        return copy;
+    }
 }

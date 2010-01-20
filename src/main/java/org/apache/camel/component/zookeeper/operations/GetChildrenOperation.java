@@ -18,11 +18,13 @@ public class GetChildrenOperation extends ZooKeeperOperation<List<String>>{
              Stat statistics = new Stat();
 
              List<String> children = connection.getChildren(node, true, statistics);
+             System.err.println("Consuming Children");
              if (log.isDebugEnabled()) {
                  if (log.isTraceEnabled()) {
-                     log.trace(format("Received data from '%s' path with statistics '%s'", node, statistics));
+                     log.trace(format("Received children from '%s' path with statistics '%s'", node, statistics));
+                     System.err.println(format("Listing contains '%s'", children));
                  } else {
-                     log.debug(format("Received data from '%s' path ", node));
+                     log.debug(format("Received children from '%s' path ", node));
                  }
              }
              return new OperationResult<List<String>>(children, statistics);

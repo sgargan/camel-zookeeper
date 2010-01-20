@@ -20,7 +20,12 @@ public class ExistsOperation extends ZooKeeperOperation<String> {
     public OperationResult<String> getResult() {
         try {
             Stat statistics = connection.exists(node, true);
-            return new OperationResult<String>(node, statistics, isOk(statistics));
+            boolean ok = isOk(statistics);
+            if(log.isTraceEnabled())
+            {
+                log.trace(ok ? "node exists" : "node does not exist");
+            }
+            return new OperationResult<String>(node, statistics, ok);
         } catch (Exception e) {
             return new OperationResult<String>(e);
         }

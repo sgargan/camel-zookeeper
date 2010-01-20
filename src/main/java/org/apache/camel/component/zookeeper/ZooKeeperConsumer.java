@@ -12,6 +12,7 @@ import org.apache.camel.component.zookeeper.operations.ChildrenChangedOperation;
 import org.apache.camel.component.zookeeper.operations.DataChangedOperation;
 import org.apache.camel.component.zookeeper.operations.ExistenceChangedOperation;
 import org.apache.camel.component.zookeeper.operations.ExistsOperation;
+import org.apache.camel.component.zookeeper.operations.GetChildrenOperation;
 import org.apache.camel.component.zookeeper.operations.GetDataOperation;
 import org.apache.camel.component.zookeeper.operations.OperationResult;
 import org.apache.camel.component.zookeeper.operations.ZooKeeperOperation;
@@ -50,7 +51,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
 
         initializeConsumer();
         executor = ExecutorServiceHelper.newFixedThreadPool(1, configuration.getPath() + "-OperationsService", true);
-        ConsumerService OpsService = new ConsumerService();
+        OperationsExecutor OpsService = new OperationsExecutor();
         executor.execute(OpsService);
     }
 
@@ -79,7 +80,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
     private void initializeDataConsumer(String node) {
         if (!shuttingDown) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Initailizing data watch on node '%s'", node));
+                log.debug(String.format("Initailizing consumption of data on node '%s'", node));
             }
            addBasicDataConsumeSequence(node);
         }
@@ -88,24 +89,9 @@ public class ZooKeeperConsumer extends DefaultConsumer {
     private void initializeChildListingConsumer(String node) {
         if (!shuttingDown) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Initailizing child listing watch on node '%s'", node));
+                log.debug(String.format("Initailizing child listing of node '%s'", node));
             }
-            try {
-                ChildrenChangedOperation op = new ChildrenChangedOperation(connection, node);
-                OperationResult result = op.get();
-                getProcessor().process(createExchange(node, result));
-
-            } catch (Exception ex) {
-                handleException(ex);
-
-            } finally {
-                if (configuration.shouldRepeat()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("Reinstating watch on '%s'", node));
-                    }
-                    initializeChildListingConsumer(node);
-                }
-            }
+            addBasicChildListingSequence(node);
         }
     }
 
@@ -113,7 +99,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         Exchange e = getEndpoint().createExchange();
         ZooKeeperMessage in = new ZooKeeperMessage(path, result.getStatistics());
         e.setIn(in);
-        System.err.println("Creating exchange with "+result.getResult());
+        //System.err.println("Creating exchange with "+result.getResult());
         if (result.isOk()) {
             in.setBody(result.getResult());
         } else {
@@ -122,7 +108,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         return e;
     }
 
-    private class ConsumerService implements Runnable {
+    private class OperationsExecutor implements Runnable {
 
         private ZooKeeperOperation current = null;
 
@@ -131,7 +117,9 @@ public class ZooKeeperConsumer extends DefaultConsumer {
 
                 try {
                     current = operations.take();
-                    log.warn(current.getClass().getSimpleName());
+                    if(log.isTraceEnabled()) {
+                        log.trace(format("Processing '%s' operation",current.getClass().getSimpleName()));
+                    }
                 } catch (InterruptedException e) {
                     continue;
                 }
@@ -147,7 +135,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
                 } finally {
                     if (configuration.shouldRepeat()) {
                         try {
-                            System.err.println("Reinstating"+current.getClass().getSimpleName());
+                            log.debug("Reinstating"+current.getClass().getSimpleName());
                             operations.offer(current.createCopy());
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -161,7 +149,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         private void backoffAndThenRestart() {
             try {
                 if (isRunAllowed()) {
-                    Thread.sleep(5000);
+                    Thread.sleep(configuration.getBackoff());
                     initializeConsumer();
                 }
             } catch (Exception e) {
@@ -174,5 +162,12 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         operations.add(new AnyOfOperations(node, new ExistsOperation(connection, node), new ExistenceChangedOperation(connection, node)));
         operations.add(new GetDataOperation(connection, node));
         operations.add(new DataChangedOperation(connection, node, false));
+    }
+
+    private void addBasicChildListingSequence(String node){
+        operations.clear();
+        operations.add(new AnyOfOperations(node, new ExistsOperation(connection, node), new ExistenceChangedOperation(connection, node)));
+        operations.add(new GetChildrenOperation(connection, node));
+        operations.add(new ChildrenChangedOperation(connection, node, false));
     }
 }

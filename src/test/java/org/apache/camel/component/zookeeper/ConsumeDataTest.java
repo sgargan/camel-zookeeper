@@ -1,9 +1,7 @@
 package org.apache.camel.component.zookeeper;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
@@ -34,15 +32,7 @@ public class ConsumeDataTest extends ZooKeeperTestSupport {
         mock.await(5, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
 
-        int lastVersion = -1;
-        List<Exchange> received = mock.getReceivedExchanges();
-        for (int x = 0; x < received.size(); x++) {
-            ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
-            System.err.println(new String((byte[])zkm.getBody()));
-            int version = zkm.getStatistics().getVersion();
-            assertTrue(lastVersion < version);
-            lastVersion = version;
-        }
+        validateExchangesReceivedInOrderWithIncreasingVersion(mock);
     }
 
     @Test
@@ -52,8 +42,9 @@ public class ConsumeDataTest extends ZooKeeperTestSupport {
         mock.expectedMessageCount(11);
         createCamelNode();
 
-        int wait = 200;
-        delay(wait);
+        delay(200);
+
+        // by now we are back waiting for a change so delete the node
         client.delete("/camel");
 
         // recreate and update a number of times.
@@ -62,8 +53,6 @@ public class ConsumeDataTest extends ZooKeeperTestSupport {
 
         mock.await(5, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
-
-
     }
 
     private void updateNode(int times) throws InterruptedException, Exception {
@@ -73,11 +62,9 @@ public class ConsumeDataTest extends ZooKeeperTestSupport {
         }
     }
 
-
-
     private void createCamelNode() throws InterruptedException, Exception {
         try {
-           delay(1000);
+            delay(1000);
             client.create("/camel", testPayload + "_0");
         } catch (NodeExistsException e) {
         }

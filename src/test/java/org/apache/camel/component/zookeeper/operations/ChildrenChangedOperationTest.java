@@ -1,41 +1,34 @@
 package org.apache.camel.component.zookeeper.operations;
 
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.camel.component.zookeeper.ZooKeeperTestSupport;
-import org.apache.camel.component.zookeeper.operations.ChildrenChangedOperation;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.junit.Test;
 
 public class ChildrenChangedOperationTest extends ZooKeeperTestSupport {
 
-
     @Test
     public void getsListingWhenNodeIsCreated() throws Exception {
         String path = "/parent";
-        client.create(path , null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        client.createPersistent(path, null);
 
         ZooKeeper connection = getConnection();
         ChildrenChangedOperation future = new ChildrenChangedOperation(connection, path);
         connection.getChildren(path, future, null);
 
-        client.create(path + "/child1", null,  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        client.createPersistent(path + "/child1", null);
         assertEquals(createChildListing("child1"), future.get().getResult());
     }
 
-    private List<String> createChildListing(String... children) {
-        return Arrays.asList(children);
-    }
+
+
 
     @Test
     public void getsNotifiedWhenNodeIsDeleted() throws Exception {
 
         String path = "/parent2";
-        client.create(path , null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        client.create(path + "/child1", null,  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        client.createPersistent(path, null);
+        client.createPersistent(path + "/child1", null);
 
         ZooKeeper connection = getConnection();
         ChildrenChangedOperation future = new ChildrenChangedOperation(connection, path);
@@ -43,5 +36,18 @@ public class ChildrenChangedOperationTest extends ZooKeeperTestSupport {
 
         client.delete(path + "/child1");
         assertEquals(createChildListing(), future.get().getResult());
+    }
+
+    @Test
+    public void getsNoListingWhenOnlyChangeIsRequired() throws Exception {
+        String path = "/parent3";
+        client.createPersistent(path, null);
+
+        ZooKeeper connection = getConnection();
+        ChildrenChangedOperation future = new ChildrenChangedOperation(connection, path, false);
+        connection.getChildren(path, future, null);
+
+        client.createPersistent(path + "/child3", null);
+        assertEquals(null, future.get());
     }
 }

@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.camel.Exchange;
+import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.camel.util.FileUtil;
 import org.apache.log4j.Logger;
@@ -40,7 +43,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
     public static void setupTestServer() throws Exception {
         log.info("Starting Zookeeper Test Infrastructure");
         server = new TestZookeeperServer(getServerPort(), clearServerData());
-        waitForServerUp("localhost:"+getServerPort(), 1000);
+        waitForServerUp("localhost:" + getServerPort(), 1000);
         client = new TestZookeeperClient(getServerPort(), getTestClientSessionTimeout());
         log.info("Started Zookeeper Test Infrastructure");
     }
@@ -54,9 +57,8 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         log.info("Stopping Zookeeper Test Infrastructure");
         client.shutdown();
         server.shutdown();
-        waitForServerDown("localhost:"+getServerPort(), 1000);
+        waitForServerDown("localhost:" + getServerPort(), 1000);
         log.info("Stopped Zookeeper Test Infrastructure");
-
     }
 
     protected static int getServerPort() {
@@ -111,6 +113,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         private ZooKeeper zk;
 
         private CountDownLatch connected = new CountDownLatch(1);
+
         public static int x;
 
         public TestZookeeperClient(int port, int timeout) throws Exception {
@@ -131,13 +134,14 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
             return zk.getData(node, this, stat);
         }
 
-
-
-
-
         public void create(String node, String data) throws Exception {
             System.err.println(String.format("Creating node '%s' with data '%s' ", node, data));
             create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        }
+
+        public void createPersistent(String node, String data) throws Exception {
+            System.err.println(String.format("Creating node '%s' with data '%s' ", node, data));
+            create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
 
         public void create(String znode, String data, List<ACL> access, CreateMode mode) throws Exception {
@@ -145,22 +149,19 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
             if (log.isInfoEnabled()) {
                 log.info(String.format("Created znode named '%s'", created));
             }
-
         }
 
-        public Stat setData(String znode, String data, int version) throws Exception
-        {
-           System.err.println("Updating data...");
-           return zk.setData(znode, data.getBytes(), version);
+        public Stat setData(String node, String data, int version) throws Exception {
+            log.debug(String.format("TestClient Updating data of node %s to %s", node, data));
+            return zk.setData(node, data.getBytes(), version);
         }
 
         public void getData(String znode) throws Exception {
             zk.getData(znode, false, new DataCallback() {
 
                 public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    if (log.isInfoEnabled()) {
-                        log.info(String.format("got data from znode named '%s', '%s'", path, new String(data)));
-                    }
+                    log.debug(String.format("Got data from znode named '%s', '%s'", path, new String(data)));
+
                 }
             }, this);
 
@@ -169,21 +170,18 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         public void process(WatchedEvent event) {
 
             if (event.getState() == KeeperState.SyncConnected) {
-                if (log.isInfoEnabled()) {
-                    log.info("TestClient connected");
-                }
+                log.info("TestClient connected");
                 connected.countDown();
             } else {
-
                 if (event.getState() == KeeperState.Disconnected) {
                     log.info("TestClient connected ?" + zk.getState());
-
                 }
             }
         }
 
-        public void delete(String znode) throws Exception {
-            zk.delete(znode, -1);
+        public void delete(String node) throws Exception {
+            System.err.println("Deleting node "+node);
+            zk.delete(node, -1);
         }
     }
 
@@ -214,7 +212,8 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
         return false;
     }
-    private static  String send4LetterWord(String hp, String cmd) throws IOException {
+
+    private static String send4LetterWord(String hp, String cmd) throws IOException {
         String split[] = hp.split(":");
         String host = split[0];
         int port;
@@ -288,6 +287,22 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
 
     public void delay(int wait) throws InterruptedException {
         Thread.sleep(wait);
+    }
+
+    protected List<String> createChildListing(String... children) {
+        return Arrays.asList(children);
+    }
+
+    protected void validateExchangesReceivedInOrderWithIncreasingVersion(MockEndpoint mock) {
+        int lastVersion = -1;
+        List<Exchange> received = mock.getReceivedExchanges();
+        for (int x = 0; x < received.size(); x++) {
+            ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
+            int version = zkm.getStatistics().getVersion();
+            System.err.println( zkm.getStatistics().toString());
+            assertTrue("Version did not increase", lastVersion < version);
+            lastVersion = version;
+        }
     }
 
 }
