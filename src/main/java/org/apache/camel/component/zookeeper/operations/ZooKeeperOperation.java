@@ -6,7 +6,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
@@ -17,7 +18,7 @@ import org.apache.zookeeper.ZooKeeper;
 @SuppressWarnings("unchecked")
 public abstract class ZooKeeperOperation<ResultType> {
 
-    protected final Logger log = Logger.getLogger(getClass());
+    protected final transient Log log = LogFactory.getLog(getClass());
 
     protected String node;
 

@@ -33,6 +33,4 @@ public class SetDataOperationTest extends ZooKeeperTestSupport{
         verifyNodeContainsData("/one", "Updated".getBytes());
         assertEquals(2, operation.get().getStatistics().getVersion());
     }
-
-
 }

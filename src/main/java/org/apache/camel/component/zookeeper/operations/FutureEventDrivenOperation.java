@@ -7,7 +7,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -22,9 +21,7 @@ import org.apache.zookeeper.Watcher.Event.EventType;
  */
 public abstract class FutureEventDrivenOperation<ResultType> extends ZooKeeperOperation<ResultType> implements Watcher {
 
-    protected final Logger log = Logger.getLogger(getClass());
-
-    private EventType[] awaitedTypes;
+     private EventType[] awaitedTypes;
 
     private CountDownLatch waitForAnyWatchedType = new CountDownLatch(1);
 
