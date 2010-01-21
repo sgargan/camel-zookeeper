@@ -21,7 +21,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.ACL;
@@ -37,7 +36,12 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
     private static Logger log = Logger.getLogger(ZooKeeperTestSupport.class);
 
     protected static TestZookeeperServer server;
+
     protected static TestZookeeperClient client;
+
+    protected String TestPayload = "This is a test";
+
+    protected byte[] TestPayloadBytes = TestPayload.getBytes();
 
     @BeforeClass
     public static void setupTestServer() throws Exception {
@@ -156,15 +160,8 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
             return zk.setData(node, data.getBytes(), version);
         }
 
-        public void getData(String znode) throws Exception {
-            zk.getData(znode, false, new DataCallback() {
-
-                public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    log.debug(String.format("Got data from znode named '%s', '%s'", path, new String(data)));
-
-                }
-            }, this);
-
+        public byte[] getData(String znode) throws Exception {
+            return zk.getData(znode, false, new Stat());
         }
 
         public void process(WatchedEvent event) {
@@ -180,7 +177,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
 
         public void delete(String node) throws Exception {
-            System.err.println("Deleting node "+node);
+            System.err.println("Deleting node " + node);
             zk.delete(node, -1);
         }
     }
@@ -299,10 +296,18 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         for (int x = 0; x < received.size(); x++) {
             ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
             int version = zkm.getStatistics().getVersion();
-            System.err.println( zkm.getStatistics().toString());
+            System.err.println(zkm.getStatistics().toString());
             assertTrue("Version did not increase", lastVersion < version);
             lastVersion = version;
         }
+    }
+
+    protected void verifyAccessControlList(String node, List<ACL> expected) throws Exception {
+        getConnection().getACL(node, new Stat());
+    }
+
+    protected void verifyNodeContainsData(String node, byte[] expected) throws Exception {
+        assertArrayEquals(expected, client.getData(node));
     }
 
 }

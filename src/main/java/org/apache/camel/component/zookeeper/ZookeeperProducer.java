@@ -38,7 +38,7 @@ public class ZookeeperProducer extends DefaultProducer {
 
     private ZooKeeperConnectionManager zkm;
 
-    private LoggingStatHandler loggingStatHandler;
+    private LoggingCallback loggingStatHandler;
 
     public ZookeeperProducer(ZooKeeperEndpoint endpoint) {
         super(endpoint);
@@ -48,41 +48,42 @@ public class ZookeeperProducer extends DefaultProducer {
 
     public void process(Exchange exchange) throws Exception {
 
-        String znodePath = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_PATH, endpoint.getConfiguration().getPath(), String.class);
-        Integer version = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_ZNODE_VERSION, -1, Integer.class);
-        ZooKeeper zoo = zkm.getConnection();
+        String node = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE, endpoint.getConfiguration().getPath(), String.class);
+        Integer version = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
+        ZooKeeper connection = zkm.getConnection();
 
         byte[] data = ExchangeHelper.convertToType(exchange, byte[].class, exchange.getIn().getBody());
         if (ExchangePattern.InOnly.equals(exchange.getPattern())) {
             if (log.isDebugEnabled()) {
-                log.debug(format("Storing data to znode '%s', not waiting for confirmation", znodePath));
+                log.debug(format("Storing data to node '%s', not waiting for confirmation", node));
             }
-            zoo.setData(znodePath, data, version, getLoggingStatHandler(), this);
+            connection.setData(node, data, version, getLoggingCallback(), this);
         }
         else
         {
             if (log.isDebugEnabled()) {
-                log.debug(format("Storing data '%s' to znode '%s', waiting for confirmation", znodePath));
+                log.debug(format("Storing data '%s' to znode '%s', waiting for confirmation", node));
             }
-            Stat statistics = zoo.setData(znodePath, data, version);
-            logStoreComplete(znodePath, statistics);
-            ZooKeeperMessage out = new ZooKeeperMessage(znodePath, statistics);
+            Stat statistics = connection.setData(node, data, version);
+            logStoreComplete(node, statistics);
+            ZooKeeperMessage out = new ZooKeeperMessage(node, statistics);
             out.setHeaders(exchange.getIn().getHeaders());
             exchange.setOut(out);
         }
     }
 
-    private StatCallback getLoggingStatHandler() {
+    private StatCallback getLoggingCallback() {
         if(loggingStatHandler == null)
         {
-            loggingStatHandler = new LoggingStatHandler();
+            loggingStatHandler = new LoggingCallback();
         }
         return loggingStatHandler;
     }
 
-    private class LoggingStatHandler implements StatCallback {
+    private class LoggingCallback implements StatCallback {
 
         public void processResult(int rc, String path, Object ctx, Stat statistics) {
+            System.err.println(org.apache.zookeeper.KeeperException.Code.get(rc));
             logStoreComplete(path, statistics);
         }
     }
@@ -98,8 +99,11 @@ public class ZookeeperProducer extends DefaultProducer {
     }
 
     public <T> T getZookeeperProperty(Exchange e, String propertyName, T defaultValue, Class<? extends T> type) {
-        T value = defaultValue;
-        value = e.getIn().getHeader(propertyName, type);
+        T value = e.getIn().getHeader(propertyName, type);
+        if(value == null)
+        {
+            value = defaultValue;
+        }
         return value;
     }
 }

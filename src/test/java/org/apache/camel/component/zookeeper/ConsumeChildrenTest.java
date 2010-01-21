@@ -42,21 +42,16 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         mock.await(5, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
 
-        validateExchangesContainListings(mock, createChildListing(),
-                                         createChildListing("hansel"),
-                                         createChildListing("gretel", "hansel"),
-                                         createChildListing("gretel"),
+        validateExchangesContainListings(mock, createChildListing(), createChildListing("hansel"), createChildListing("gretel", "hansel"), createChildListing("gretel"),
                                          createChildListing());
 
     }
-
 
     private void validateExchangesContainListings(MockEndpoint mock, List<String>... expected) throws InvalidPayloadException {
         int index = 0;
         for (Exchange received : mock.getReceivedExchanges()) {
             List<String> actual = ExchangeHelper.getMandatoryInBody(received, List.class);
             assertEquals(expected[index++], actual);
-            System.err.println(actual);
         }
     }
 
@@ -66,26 +61,9 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         for (int x = 0; x < received.size(); x++) {
             ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
             int childCount = zkm.getStatistics().getNumChildren();
-            assertNotSame("Num of children did not change", lastChildCount,  childCount);
+            assertNotSame("Num of children did not change", lastChildCount, childCount);
             lastChildCount = childCount;
         }
     }
-    // @Test
-    // public void deletionOfAwaitedNodeCausesNoFailure() throws Exception {
-    //
-    // MockEndpoint mock = getMockEndpoint("mock:zookeeper-data");
-    // mock.expectedMessageCount(11);
-    // createCamelNode();
-    //
-    // int wait = 200;
-    // delay(wait);
-    // client.delete("/camel");
-    //
-    // // recreate and update a number of times.
-    // createCamelNode();
-    // updateNode(10);
-    // mock.await(5, TimeUnit.SECONDS);
-    // mock.assertIsSatisfied();
-    // }
 
 }

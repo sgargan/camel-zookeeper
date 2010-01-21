@@ -35,7 +35,7 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
     }
 
     public Producer createProducer() throws Exception {
-        return null;// new ZookeeperProducer(this);
+        return new ZookeeperProducer(this);
     }
 
     public Consumer createConsumer(Processor processor) throws Exception {

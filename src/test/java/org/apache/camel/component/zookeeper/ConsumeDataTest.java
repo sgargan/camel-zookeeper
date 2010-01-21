@@ -9,8 +9,6 @@ import org.junit.Test;
 
 public class ConsumeDataTest extends ZooKeeperTestSupport {
 
-    private String testPayload = "This is a test";
-
     @Override
     protected RouteBuilder[] createRouteBuilders() throws Exception {
         return new RouteBuilder[] {new RouteBuilder() {
@@ -58,14 +56,14 @@ public class ConsumeDataTest extends ZooKeeperTestSupport {
     private void updateNode(int times) throws InterruptedException, Exception {
         for (int x = 1; x < times; x++) {
             delay(200);
-            client.setData("/camel", testPayload + "_" + x, -1);
+            client.setData("/camel", TestPayload + "_" + x, -1);
         }
     }
 
     private void createCamelNode() throws InterruptedException, Exception {
         try {
             delay(1000);
-            client.create("/camel", testPayload + "_0");
+            client.create("/camel", TestPayload + "_0");
         } catch (NodeExistsException e) {
         }
     }

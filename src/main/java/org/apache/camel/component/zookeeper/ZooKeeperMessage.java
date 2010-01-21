@@ -15,11 +15,11 @@ import org.apache.zookeeper.data.Stat;
  */
 public class ZooKeeperMessage extends DefaultMessage {
 
-    public final static String ZOOKEEPER_PATH = "CamelZooKeeperPath";
+    public final static String ZOOKEEPER_NODE = "CamelZooKeeperPath";
 
     public final static String ZOOKEEPER_CHILDREN = "CamelZooKeeperChildren";
 
-    public static final String ZOOKEEPER_ZNODE_VERSION = "CamelZooKeeperVersion";
+    public static final String ZOOKEEPER_NODE_VERSION = "CamelZooKeeperVersion";
 
     public static final String ZOOKEEPER_ERROR_CODE = "CamelZooKeeperErrorCode";
 
@@ -32,7 +32,7 @@ public class ZooKeeperMessage extends DefaultMessage {
     public ZooKeeperMessage(String path, Stat statistics) {
         this.path = path;
         this.statistics = statistics;
-        this.setHeader(ZOOKEEPER_PATH, path);
+        this.setHeader(ZOOKEEPER_NODE, path);
 
     }
 
