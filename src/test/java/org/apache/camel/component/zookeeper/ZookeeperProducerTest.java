@@ -7,7 +7,6 @@ import org.junit.Test;
 
 public class ZookeeperProducerTest extends ZooKeeperTestSupport {
 
-    private String datasetUri;
     private String zookeeperUri;
 
     @Override
@@ -17,7 +16,7 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
             @Override
             public void configure() throws Exception {
                 getContext().addInterceptStrategy(new Tracer());
-                zookeeperUri = "zoo://localhost:39913/node";
+                zookeeperUri = "zoo://localhost:39913/node?create=true";
 
                 from("direct:setnode").to(zookeeperUri);
                 from(zookeeperUri).to("mock:result");

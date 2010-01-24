@@ -6,9 +6,9 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * <code>SetDataOperation</code> sets the content of a given ZooKeeper node.
- *
- * @author sgargan
+ * <code>SetDataOperation</code> sets the content of a ZooKeeper node. An optional version
+ * may be specified that the node must currently have for the operation to succeed.
+ * @see {@link ZooKeeper#setData(String, byte[], int)}
  */
 public class SetDataOperation extends ZooKeeperOperation<byte[]> {
 
@@ -40,6 +40,14 @@ public class SetDataOperation extends ZooKeeperOperation<byte[]> {
 
     public void setVersion(int version) {
         this.version = version;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public ZooKeeperOperation createCopy() throws Exception {
+        SetDataOperation copy = (SetDataOperation) super.createCopy();
+        copy.version = -1; // set the version to -1 for 'any version'
+        return copy;
     }
 
 }

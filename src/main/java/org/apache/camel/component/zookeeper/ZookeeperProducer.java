@@ -19,16 +19,22 @@ package org.apache.camel.component.zookeeper;
 
 import static java.lang.String.format;
 
+import java.util.List;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.impl.DefaultProducer;
 import org.apache.camel.util.ExchangeHelper;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
+import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * <code>ZookeeperProducer</code> takes the content of an exchange and attempts to
+ * <code>ZookeeperProducer</code> takes the content of an exchange and attempts
+ * to
  *
  * @version $
  */
@@ -50,17 +56,17 @@ public class ZookeeperProducer extends DefaultProducer {
 
         String node = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE, endpoint.getConfiguration().getPath(), String.class);
         Integer version = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
+
         ZooKeeper connection = zkm.getConnection();
 
-        byte[] data = ExchangeHelper.convertToType(exchange, byte[].class, exchange.getIn().getBody());
+        byte[] data = getPayloadFromExchange(exchange);
         if (ExchangePattern.InOnly.equals(exchange.getPattern())) {
             if (log.isDebugEnabled()) {
                 log.debug(format("Storing data to node '%s', not waiting for confirmation", node));
             }
-            connection.setData(node, data, version, getLoggingCallback(), this);
-        }
-        else
-        {
+
+            connection.setData(node, data, version, getLoggingCallback(), new AsyncContext(connection, exchange));
+        } else {
             if (log.isDebugEnabled()) {
                 log.debug(format("Storing data '%s' to znode '%s', waiting for confirmation", node));
             }
@@ -72,18 +78,43 @@ public class ZookeeperProducer extends DefaultProducer {
         }
     }
 
+    private byte[] getPayloadFromExchange(Exchange exchange) {
+        byte[] data = ExchangeHelper.convertToType(exchange, byte[].class, exchange.getIn().getBody());
+        return data;
+    }
+
     private StatCallback getLoggingCallback() {
-        if(loggingStatHandler == null)
-        {
+        if (loggingStatHandler == null) {
             loggingStatHandler = new LoggingCallback();
         }
         return loggingStatHandler;
     }
 
+    private class AsyncContext {
+        ZooKeeper connection;
+        Exchange exchange;
+
+        public AsyncContext(ZooKeeper connection, Exchange exchange) {
+            this.connection = connection;
+            this.exchange = exchange;
+        }
+    }
+
     private class LoggingCallback implements StatCallback {
 
         public void processResult(int rc, String path, Object ctx, Stat statistics) {
-            System.err.println(org.apache.zookeeper.KeeperException.Code.get(rc));
+            if (Code.NONODE.equals(Code.get(rc))) {
+                if (endpoint.getConfiguration().shouldCreate()) {
+                    log.warn(format("Node '%s' did not exist, creating it...", path));
+                    AsyncContext context = (AsyncContext)ctx;
+                    Exchange e = context.exchange;
+                    byte[] payload = getPayloadFromExchange(e);
+
+                    List<ACL> acl = getZookeeperProperty(e, ZooKeeperMessage.ZOOKEEPER_ACL, Ids.ANYONE_ID_UNSAFE, List.class);
+                    Integer version = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
+                    context.connection.create(path, payload, acl, mode);
+                }
+            }
             logStoreComplete(path, statistics);
         }
     }
@@ -91,7 +122,7 @@ public class ZookeeperProducer extends DefaultProducer {
     private void logStoreComplete(String path, Stat statistics) {
         if (log.isDebugEnabled()) {
             if (log.isTraceEnabled()) {
-                log.trace(format("Received stats from storing data to znode '%s'", path, statistics));
+                log.trace(format("Storing data to node '%s'", path, statistics));
             } else {
                 log.debug(format("Received data from '%s' path ", path));
             }
@@ -100,8 +131,7 @@ public class ZookeeperProducer extends DefaultProducer {
 
     public <T> T getZookeeperProperty(Exchange e, String propertyName, T defaultValue, Class<? extends T> type) {
         T value = e.getIn().getHeader(propertyName, type);
-        if(value == null)
-        {
+        if (value == null) {
             value = defaultValue;
         }
         return value;
