@@ -41,6 +41,7 @@ public class ZooKeeperConfiguration implements Cloneable {
     private boolean awaitCreation = true;
     private boolean repeat;
     private boolean listChildren;
+    private boolean shouldCreate;
 
     public void addZookeeperServer(String server) {
         if (servers == null) {
@@ -151,5 +152,15 @@ public class ZooKeeperConfiguration implements Cloneable {
     public void setBackoff(int backoff) {
         this.backoff = backoff;
     }
+
+    public void setCreate(boolean shouldCreate) {
+        this.shouldCreate = shouldCreate;
+    }
+
+    public boolean shouldCreate() {
+        return shouldCreate;
+    }
+
+
 
 }

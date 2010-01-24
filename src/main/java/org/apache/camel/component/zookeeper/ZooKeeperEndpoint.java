@@ -104,6 +104,15 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
     }
 
     @ManagedAttribute
+    public boolean shouldCreate() {
+        return getConfiguration().shouldCreate();
+    }
+
+    public void setCreate(boolean shouldCreate) {
+        getConfiguration().setCreate(shouldCreate);
+    }
+
+    @ManagedAttribute
     public long getBackoff() {
         return getConfiguration().getBackoff();
     }
