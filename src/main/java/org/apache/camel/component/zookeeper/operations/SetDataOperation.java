@@ -1,5 +1,7 @@
 package org.apache.camel.component.zookeeper.operations;
 
+import static java.lang.String.format;
+
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
@@ -22,6 +24,14 @@ public class SetDataOperation extends ZooKeeperOperation<byte[]> {
     public OperationResult<byte[]> getResult() {
         try {
             Stat statistics = connection.setData(node, data, version);
+            if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
+                    log.trace(format("Set data of node '%s'  with '%d' bytes of data, retrieved statistics '%s' ",
+                                     node, data != null ? data.length : 0, statistics));
+                } else {
+                    log.debug(format("Set data of node '%s' with '%d' bytes of data", node, data != null ? data.length : 0));
+                }
+            }
             return new OperationResult<byte[]>(data, statistics);
         } catch (Exception e) {
             return new OperationResult<byte[]>(e);

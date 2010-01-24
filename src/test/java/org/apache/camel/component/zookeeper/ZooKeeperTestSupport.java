@@ -139,12 +139,12 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
 
         public void create(String node, String data) throws Exception {
-            System.err.println(String.format("Creating node '%s' with data '%s' ", node, data));
+            log.debug(String.format("Creating node '%s' with data '%s' ", node, data));
             create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         }
 
         public void createPersistent(String node, String data) throws Exception {
-            System.err.println(String.format("Creating node '%s' with data '%s' ", node, data));
+            log.debug(String.format("Creating node '%s' with data '%s' ", node, data));
             create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
 
@@ -296,7 +296,6 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         for (int x = 0; x < received.size(); x++) {
             ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
             int version = zkm.getStatistics().getVersion();
-            System.err.println(zkm.getStatistics().toString());
             assertTrue("Version did not increase", lastVersion < version);
             lastVersion = version;
         }
@@ -307,7 +306,10 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
     }
 
     protected void verifyNodeContainsData(String node, byte[] expected) throws Exception {
-        assertArrayEquals(expected, client.getData(node));
+        if (expected == null) {
+            assertNull(client.getData(node));
+        } else {
+            assertEquals( new String(expected), new String(client.getData(node)));
+        }
     }
-
 }
