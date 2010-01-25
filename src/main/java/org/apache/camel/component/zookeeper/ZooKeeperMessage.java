@@ -3,7 +3,6 @@
  */
 package org.apache.camel.component.zookeeper;
 
-import org.apache.camel.Message;
 import org.apache.camel.impl.DefaultMessage;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.Code;
@@ -50,19 +49,7 @@ public class ZooKeeperMessage extends DefaultMessage {
     }
 
     public CreateMode getCreateMode() {
-        return getCreateMode(this);
-    }
-
-    public static CreateMode getCreateMode(Message message) {
-        CreateMode mode = null;
-        Integer modeHeader = message.getHeader(ZOOKEEPER_CREATE_MODE, Integer.class);
-        if (mode != null) {
-            try {
-                mode = CreateMode.fromFlag(modeHeader);
-            } catch (Exception e) {
-            }
-        }
-        return mode;
+        return ZooKeeperUtils.getCreateMode(this);
     }
 
     public Stat getStatistics() {

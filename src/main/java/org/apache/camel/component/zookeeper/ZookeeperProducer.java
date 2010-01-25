@@ -18,18 +18,21 @@
 package org.apache.camel.component.zookeeper;
 
 import static java.lang.String.format;
-
-import java.util.List;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getAclList;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getCreateMode;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getPayloadFromExchange;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getZookeeperProperty;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
+import org.apache.camel.Message;
+import org.apache.camel.component.zookeeper.operations.CreateOperation;
+import org.apache.camel.component.zookeeper.operations.OperationResult;
+import org.apache.camel.component.zookeeper.operations.SetDataOperation;
 import org.apache.camel.impl.DefaultProducer;
-import org.apache.camel.util.ExchangeHelper;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -38,6 +41,7 @@ import org.apache.zookeeper.data.Stat;
  *
  * @version $
  */
+@SuppressWarnings("unchecked")
 public class ZookeeperProducer extends DefaultProducer {
 
     private ZooKeeperEndpoint endpoint;
@@ -54,33 +58,42 @@ public class ZookeeperProducer extends DefaultProducer {
 
     public void process(Exchange exchange) throws Exception {
 
-        String node = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE, endpoint.getConfiguration().getPath(), String.class);
-        Integer version = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
+        Message m = exchange.getIn();
+        String node = getZookeeperProperty(m, ZooKeeperMessage.ZOOKEEPER_NODE, endpoint.getConfiguration().getPath(), String.class);
+        Integer version = getZookeeperProperty(m, ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
 
         ZooKeeper connection = zkm.getConnection();
 
-        byte[] data = getPayloadFromExchange(exchange);
+        byte[] payloadFromExchange = getPayloadFromExchange(exchange);
         if (ExchangePattern.InOnly.equals(exchange.getPattern())) {
             if (log.isDebugEnabled()) {
                 log.debug(format("Storing data to node '%s', not waiting for confirmation", node));
             }
-
-            connection.setData(node, data, version, getLoggingCallback(), new AsyncContext(connection, exchange));
+            connection.setData(node, payloadFromExchange, version, getLoggingCallback(), new AsyncContext(connection, exchange));
         } else {
             if (log.isDebugEnabled()) {
                 log.debug(format("Storing data '%s' to znode '%s', waiting for confirmation", node));
             }
-            Stat statistics = connection.setData(node, data, version);
-            logStoreComplete(node, statistics);
-            ZooKeeperMessage out = new ZooKeeperMessage(node, statistics);
+
+            OperationResult result = synchronouslySetData(connection, node, exchange);
+
+            ZooKeeperMessage out = new ZooKeeperMessage(node, result.getStatistics());
+            if (result.isOk()) {
+                out.setBody(result.getResult());
+            } else {
+                exchange.setException(result.getException());
+            }
             out.setHeaders(exchange.getIn().getHeaders());
             exchange.setOut(out);
         }
     }
 
-    private byte[] getPayloadFromExchange(Exchange exchange) {
-        byte[] data = ExchangeHelper.convertToType(exchange, byte[].class, exchange.getIn().getBody());
-        return data;
+    private Exchange createExchange(String path, OperationResult result) {
+        Exchange e = getEndpoint().createExchange();
+        ZooKeeperMessage in = new ZooKeeperMessage(path, result.getStatistics());
+        e.setIn(in);
+
+        return e;
     }
 
     private StatCallback getLoggingCallback() {
@@ -102,38 +115,70 @@ public class ZookeeperProducer extends DefaultProducer {
 
     private class LoggingCallback implements StatCallback {
 
-        public void processResult(int rc, String path, Object ctx, Stat statistics) {
+        public void processResult(int rc, String node, Object ctx, Stat statistics) {
             if (Code.NONODE.equals(Code.get(rc))) {
                 if (endpoint.getConfiguration().shouldCreate()) {
-                    log.warn(format("Node '%s' did not exist, creating it...", path));
+                    log.warn(format("Node '%s' did not exist, creating it...", node));
                     AsyncContext context = (AsyncContext)ctx;
-                    Exchange e = context.exchange;
-                    byte[] payload = getPayloadFromExchange(e);
+                    OperationResult<String> result = null;
+                    try {
+                        result = createNode(context.connection, node, context.exchange);
 
-                    List<ACL> acl = getZookeeperProperty(e, ZooKeeperMessage.ZOOKEEPER_ACL, Ids.ANYONE_ID_UNSAFE, List.class);
-                    Integer version = getZookeeperProperty(exchange, ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
-                    context.connection.create(path, payload, acl, mode);
+                    } catch (Exception e) {
+                        log.warn(format("Node '%s' did not exist, creating it...", node));
+                    }
+
+                    if (result != null && result.isOk()) {
+                        try {
+                            synchronouslySetData(context.connection, node, context.exchange);
+                        } catch (Exception e) {
+                            log.error(format("Error setting data of node '%s' in async mode...", node), e);
+                        }
+                    }
                 }
             }
-            logStoreComplete(path, statistics);
+            logStoreComplete(node, statistics);
         }
+    }
+
+    private OperationResult<String> createNode(ZooKeeper connection, String node, Exchange e) throws Exception {
+        CreateOperation create = new CreateOperation(connection, node);
+        create.setPermissions(getAclList(e.getIn()));
+        create.setCreateMode(getCreateMode(e.getIn()));
+        create.setData(getPayloadFromExchange(e));
+        return create.get();
+    }
+
+
+    /**
+     * Tries to set the data first and if a nonode error is recieved then an attempt will be made to create and set it again
+     */
+    private OperationResult synchronouslySetData(ZooKeeper connection, String node, Exchange e) throws Exception {
+
+        SetDataOperation setData = new SetDataOperation(connection, node, getPayloadFromExchange(e));
+        setData.setVersion(getVersionFromMessageHeader(e));
+
+        OperationResult result = setData.get();
+
+        if (!result.isOk() && endpoint.getConfiguration().shouldCreate() && result.failedDueTo(Code.NONODE)) {
+            log.warn(format("Node '%s' did not exist, creating it...", node));
+            result = createNode(connection, node, e);
+
+        }
+        return result;
+    }
+
+    private Integer getVersionFromMessageHeader(Exchange e) {
+        return getZookeeperProperty(e.getIn(), ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
     }
 
     private void logStoreComplete(String path, Stat statistics) {
         if (log.isDebugEnabled()) {
             if (log.isTraceEnabled()) {
-                log.trace(format("Storing data to node '%s'", path, statistics));
+                log.trace(format("Stored data to node '%s', and receive statistics %s", path, statistics));
             } else {
-                log.debug(format("Received data from '%s' path ", path));
+                log.debug(format("Stored data to node '%s'", path));
             }
         }
-    }
-
-    public <T> T getZookeeperProperty(Exchange e, String propertyName, T defaultValue, Class<? extends T> type) {
-        T value = e.getIn().getHeader(propertyName, type);
-        if (value == null) {
-            value = defaultValue;
-        }
-        return value;
     }
 }
