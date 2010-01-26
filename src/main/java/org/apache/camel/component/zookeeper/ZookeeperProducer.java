@@ -21,6 +21,7 @@ import static java.lang.String.format;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getAclList;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getCreateMode;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getPayloadFromExchange;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getVersionFromMessageHeader;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getZookeeperProperty;
 
 import org.apache.camel.Exchange;
@@ -30,14 +31,16 @@ import org.apache.camel.component.zookeeper.operations.CreateOperation;
 import org.apache.camel.component.zookeeper.operations.OperationResult;
 import org.apache.camel.component.zookeeper.operations.SetDataOperation;
 import org.apache.camel.impl.DefaultProducer;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * <code>ZookeeperProducer</code> takes the content of an exchange and attempts
- * to
+ * <code>ZookeeperProducer</code> attempts to set the content of nodes in the
+ * {@link ZooKeeper} cluster with the payloads of the of the exchanges it
+ * receives.
  *
  * @version $
  */
@@ -47,8 +50,6 @@ public class ZookeeperProducer extends DefaultProducer {
     private ZooKeeperEndpoint endpoint;
 
     private ZooKeeperConnectionManager zkm;
-
-    private LoggingCallback loggingStatHandler;
 
     public ZookeeperProducer(ZooKeeperEndpoint endpoint) {
         super(endpoint);
@@ -69,10 +70,10 @@ public class ZookeeperProducer extends DefaultProducer {
             if (log.isDebugEnabled()) {
                 log.debug(format("Storing data to node '%s', not waiting for confirmation", node));
             }
-            connection.setData(node, payloadFromExchange, version, getLoggingCallback(), new AsyncContext(connection, exchange));
+            connection.setData(node, payloadFromExchange, version, new LoggingCallback(), new AsyncContext(connection, exchange));
         } else {
             if (log.isDebugEnabled()) {
-                log.debug(format("Storing data '%s' to znode '%s', waiting for confirmation", node));
+                log.debug(format("Storing data to znode '%s', waiting for confirmation", node));
             }
 
             OperationResult result = synchronouslySetData(connection, node, exchange);
@@ -86,21 +87,6 @@ public class ZookeeperProducer extends DefaultProducer {
             out.setHeaders(exchange.getIn().getHeaders());
             exchange.setOut(out);
         }
-    }
-
-    private Exchange createExchange(String path, OperationResult result) {
-        Exchange e = getEndpoint().createExchange();
-        ZooKeeperMessage in = new ZooKeeperMessage(path, result.getStatistics());
-        e.setIn(in);
-
-        return e;
-    }
-
-    private StatCallback getLoggingCallback() {
-        if (loggingStatHandler == null) {
-            loggingStatHandler = new LoggingCallback();
-        }
-        return loggingStatHandler;
     }
 
     private class AsyncContext {
@@ -123,35 +109,32 @@ public class ZookeeperProducer extends DefaultProducer {
                     OperationResult<String> result = null;
                     try {
                         result = createNode(context.connection, node, context.exchange);
-
                     } catch (Exception e) {
-                        log.warn(format("Node '%s' did not exist, creating it...", node));
+                        log.error(format("Error trying to create node '%s'", node), e);
                     }
 
-                    if (result != null && result.isOk()) {
-                        try {
-                            synchronouslySetData(context.connection, node, context.exchange);
-                        } catch (Exception e) {
-                            log.error(format("Error setting data of node '%s' in async mode...", node), e);
-                        }
+                    if (result == null || !result.isOk()) {
+                        log.error(format("Error creating node '%s'", node), result.getException());
                     }
                 }
+            } else {
+                logStoreComplete(node, statistics);
             }
-            logStoreComplete(node, statistics);
         }
     }
 
     private OperationResult<String> createNode(ZooKeeper connection, String node, Exchange e) throws Exception {
         CreateOperation create = new CreateOperation(connection, node);
         create.setPermissions(getAclList(e.getIn()));
-        create.setCreateMode(getCreateMode(e.getIn()));
+        CreateMode mode = getCreateMode(e.getIn());
+        create.setCreateMode(mode == null ? CreateMode.EPHEMERAL : mode);
         create.setData(getPayloadFromExchange(e));
         return create.get();
     }
 
-
     /**
-     * Tries to set the data first and if a nonode error is recieved then an attempt will be made to create and set it again
+     * Tries to set the data first and if a nonode error is received then an
+     * attempt will be made to create and set it again
      */
     private OperationResult synchronouslySetData(ZooKeeper connection, String node, Exchange e) throws Exception {
 
@@ -163,14 +146,11 @@ public class ZookeeperProducer extends DefaultProducer {
         if (!result.isOk() && endpoint.getConfiguration().shouldCreate() && result.failedDueTo(Code.NONODE)) {
             log.warn(format("Node '%s' did not exist, creating it...", node));
             result = createNode(connection, node, e);
-
         }
         return result;
     }
 
-    private Integer getVersionFromMessageHeader(Exchange e) {
-        return getZookeeperProperty(e.getIn(), ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
-    }
+
 
     private void logStoreComplete(String path, Stat statistics) {
         if (log.isDebugEnabled()) {

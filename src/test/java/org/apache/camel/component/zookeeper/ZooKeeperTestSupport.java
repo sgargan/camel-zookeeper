@@ -177,7 +177,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
 
         public void delete(String node) throws Exception {
-            System.err.println("Deleting node " + node);
+            log.debug("Deleting node " + node);
             zk.delete(node, -1);
         }
     }

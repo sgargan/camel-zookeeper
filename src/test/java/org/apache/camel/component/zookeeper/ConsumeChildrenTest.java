@@ -53,7 +53,6 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         int index = 0;
         for (Exchange received : mock.getReceivedExchanges()) {
             List<String> actual = ExchangeHelper.getMandatoryInBody(received, List.class);
-            System.err.println(actual);
             assertEquals(expected[index++], actual);
         }
     }

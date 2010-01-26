@@ -23,7 +23,7 @@ public class ZooKeeperUtils {
     public static CreateMode getCreateMode(Message message) {
         CreateMode mode = null;
         Integer modeHeader = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, Integer.class);
-        if (mode != null) {
+        if (modeHeader != null) {
             try {
                 mode = CreateMode.fromFlag(modeHeader);
             } catch (Exception e) {
@@ -40,12 +40,16 @@ public class ZooKeeperUtils {
         return value;
     }
 
+    public static Integer getVersionFromMessageHeader(Exchange e) {
+        return getZookeeperProperty(e.getIn(), ZooKeeperMessage.ZOOKEEPER_NODE_VERSION, -1, Integer.class);
+    }
+
     public static byte[] getPayloadFromExchange(Exchange exchange) {
         return ExchangeHelper.convertToType(exchange, byte[].class, exchange.getIn().getBody());
     }
 
     @SuppressWarnings("unchecked")
     public static List<ACL> getAclList(Message in) {
-        return (List<ACL> )getZookeeperProperty(in, ZooKeeperMessage.ZOOKEEPER_ACL, Ids.ANYONE_ID_UNSAFE, List.class);
+        return getZookeeperProperty(in, ZooKeeperMessage.ZOOKEEPER_ACL, Ids.OPEN_ACL_UNSAFE, List.class);
     }
 }
