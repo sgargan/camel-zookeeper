@@ -7,6 +7,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.InvalidPayloadException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.component.zookeeper.NaturalSortComparator.Order;
 import org.apache.camel.util.ExchangeHelper;
 import org.junit.Test;
 
@@ -17,7 +18,8 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
     protected RouteBuilder[] createRouteBuilders() throws Exception {
         return new RouteBuilder[] {new RouteBuilder() {
             public void configure() throws Exception {
-                from("zoo://localhost:39913/grimm?repeat=true&listChildren=true").to("mock:zookeeper-data");
+                from("zoo://localhost:39913/grimm?repeat=true&listChildren=true")
+                    .sortBody(new NaturalSortComparator(Order.Descending)).to("mock:zookeeper-data");
             }
         }};
     }
@@ -51,6 +53,7 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         int index = 0;
         for (Exchange received : mock.getReceivedExchanges()) {
             List<String> actual = ExchangeHelper.getMandatoryInBody(received, List.class);
+            System.err.println(actual);
             assertEquals(expected[index++], actual);
         }
     }
