@@ -44,7 +44,7 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         mock.await(5, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
 
-        validateExchangesContainListings(mock, createChildListing(), createChildListing("hansel"), createChildListing("gretel", "hansel"), createChildListing("gretel"),
+        validateExchangesContainListings(mock, createChildListing(), createChildListing("hansel"), createChildListing("hansel", "gretel"), createChildListing("gretel"),
                                          createChildListing());
 
     }
