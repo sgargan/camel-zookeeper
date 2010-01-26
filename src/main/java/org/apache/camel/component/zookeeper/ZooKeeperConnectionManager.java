@@ -1,7 +1,5 @@
 package org.apache.camel.component.zookeeper;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.management.ManagedManagementStrategy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.ZooKeeper;
@@ -19,7 +17,8 @@ public class ZooKeeperConnectionManager {
     public ZookeeperConnectionStrategy strategy;
 
     public ZooKeeperConnectionManager(ZooKeeperEndpoint endpoint){
-        strategy = isJmxEnabled(endpoint) ? new ReconfigureableZookeeperConnectionStrategy(endpoint) : new DefaultZookeeperConnectionStrategy(endpoint);
+       // strategy = isJmxEnabled(endpoint) ? new ReconfigureableZookeeperConnectionStrategy(endpoint) : ;
+        strategy = new DefaultZookeeperConnectionStrategy(endpoint);
     }
 
     public ZooKeeper getConnection()
@@ -27,41 +26,15 @@ public class ZooKeeperConnectionManager {
         return strategy.getConnection().getZooKeeper();
     }
 
-    private boolean isJmxEnabled(ZooKeeperEndpoint endpoint) {
-        CamelContext context = endpoint.getCamelContext();
-        return context.getManagementStrategy() instanceof ManagedManagementStrategy;
-    }
+//    private boolean isJmxEnabled(ZooKeeperEndpoint endpoint) {
+//        CamelContext context = endpoint.getCamelContext();
+//        return context.getManagementStrategy() instanceof ManagedManagementStrategy;
+//    }
 
     private interface ZookeeperConnectionStrategy {
         public ConnectionHolder getConnection();
 
         public void shutdown();
-    }
-
-    private class ReconfigureableZookeeperConnectionStrategy implements ZookeeperConnectionStrategy {
-        private ZooKeeperConfiguration config;
-        private ConnectionHolder holder;
-
-        public ReconfigureableZookeeperConnectionStrategy(ZooKeeperEndpoint endpoint) {
-            this.config = endpoint.getConfiguration();
-        }
-
-        public ConnectionHolder getConnection() {
-            if (config.isChanged()) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Reconfiguring Zookeeper connection as configuration has changed to %s", config));
-                }
-                if(holder != null) {
-                    holder.closeConnection();
-                }
-                holder = new ConnectionHolder(config);
-            }
-            return holder;
-        }
-
-        public void shutdown() {
-            holder.closeConnection();
-        }
     }
 
     private class DefaultZookeeperConnectionStrategy implements ZookeeperConnectionStrategy {
@@ -83,7 +56,6 @@ public class ZooKeeperConnectionManager {
         public void shutdown() {
             holder.closeConnection();
         }
-
     }
 
     public void shutdown() {
