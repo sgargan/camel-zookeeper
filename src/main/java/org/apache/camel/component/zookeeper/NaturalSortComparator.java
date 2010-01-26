@@ -33,11 +33,12 @@ public class NaturalSortComparator implements Comparator<CharSequence> {
     }
 
     public NaturalSortComparator(Order order) {
-        this.order = order;
+        if (order != null) {
+            this.order = order;
+        }
     }
 
     public int compare(CharSequence first, CharSequence second) {
-
         if (first == null && second == null) {
             return 0;
         }
