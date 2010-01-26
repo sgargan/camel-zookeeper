@@ -15,7 +15,8 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 /**
  * <code>ConnectionHolder</code> watches for Connection based events from
- * {@link ZooKeeper}.
+ * {@link ZooKeeper} and can be used to block until a connection has been
+ * established.
  */
 public class ConnectionHolder implements Watcher {
 
@@ -74,7 +75,7 @@ public class ConnectionHolder implements Watcher {
         try {
             zookeeper.close();
         } catch (InterruptedException e) {
-           log.error("Error closing zookeeper connection.", e);
+            log.error("Error closing zookeeper connection.", e);
         }
     }
 }
