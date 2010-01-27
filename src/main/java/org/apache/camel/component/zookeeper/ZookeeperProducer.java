@@ -88,6 +88,7 @@ public class ZookeeperProducer extends DefaultProducer {
 
     private void updateExchangeWithResult(ProductionContext context, OperationResult result) {
         ZooKeeperMessage out = new ZooKeeperMessage(context.node, result.getStatistics());
+        Exchange e = context.exchange;
         if (result.isOk()) {
             out.setBody(result.getResult());
         } else {

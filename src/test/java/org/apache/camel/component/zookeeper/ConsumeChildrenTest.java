@@ -30,15 +30,15 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:zookeeper-data");
         mock.expectedMessageCount(5);
 
-        delay(500);
+        delay(200);
         client.createPersistent("/grimm", "parent");
-        delay(500);
+        delay(200);
         client.create("/grimm/hansel", "child");
-        delay(500);
+        delay(200);
         client.create("/grimm/gretel", "child");
-        delay(500);
+        delay(200);
         client.delete("/grimm/hansel");
-        delay(500);
+        delay(200);
         client.delete("/grimm/gretel");
 
         mock.await(5, TimeUnit.SECONDS);
