@@ -141,6 +141,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         public void create(String node, String data) throws Exception {
             log.debug(String.format("Creating node '%s' with data '%s' ", node, data));
             create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            delay(200);
         }
 
         public void createPersistent(String node, String data) throws Exception {
@@ -282,7 +283,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
     }
 
-    public void delay(int wait) throws InterruptedException {
+    public static void delay(int wait) throws InterruptedException {
         Thread.sleep(wait);
     }
 
