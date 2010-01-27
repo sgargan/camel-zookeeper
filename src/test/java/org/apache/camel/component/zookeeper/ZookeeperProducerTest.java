@@ -17,7 +17,7 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         return new RouteBuilder[] {new RouteBuilder() {
             public void configure() throws Exception {
                 zookeeperUri = "zoo://localhost:39913/node?create=true";
-                from("direct:sync-set"). to(zookeeperUri).to("mock:producer-out");
+                from("direct:roundtrip"). to(zookeeperUri).to("mock:producer-out");
                 from(zookeeperUri).to("mock:consumed-from-node");
             }
         }, new RouteBuilder() {
@@ -28,7 +28,7 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         new RouteBuilder() {
             public void configure() throws Exception {
                 from("direct:node-from-header").to("zoo://localhost:39913/notset?create=true");
-                from("zoo://localhost:39913/set?create=true").to("mock:consumed-from-node");
+                from("zoo://localhost:39913/set?create=true").to("mock:consumed-from-set-node");
             }
         }};
     }
@@ -42,7 +42,7 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
 
         Exchange e = createExchangeWithBody("TestPayload");
         e.setPattern(ExchangePattern.InOut);
-        template.send("direct:sync-set", e);
+        template.send("direct:roundtrip", e);
 
         mock.await(2, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
@@ -54,15 +54,17 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:consumed-from-node");
         mock.expectedMessageCount(1);
 
-        sendBody("direct:sync-set", "TestPayload");
+        Exchange e = createExchangeWithBody("TestPayload");
+        template.send("direct:roundtrip", e);
 
         mock.await(2, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
+        assertNull(e.getOut().getBody());
     }
 
     @Test
     public void setUsingNodeFromHeader() throws Exception {
-        MockEndpoint mock = getMockEndpoint("mock:consumed-from-node");
+        MockEndpoint mock = getMockEndpoint("mock:consumed-from-set-node");
         mock.expectedMessageCount(1);
 
         Exchange e = createExchangeWithBody("TestPayload");
