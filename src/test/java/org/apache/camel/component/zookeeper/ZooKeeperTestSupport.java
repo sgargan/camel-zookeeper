@@ -141,7 +141,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         public void create(String node, String data) throws Exception {
             log.debug(String.format("Creating node '%s' with data '%s' ", node, data));
             create(node, data, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-            delay(200);
+
         }
 
         public void createPersistent(String node, String data) throws Exception {
@@ -150,6 +150,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
 
         public void create(String znode, String data, List<ACL> access, CreateMode mode) throws Exception {
+            delay(200);
             String created = zk.create(znode, data != null ? data.getBytes() : null, access, mode);
             if (log.isInfoEnabled()) {
                 log.info(String.format("Created znode named '%s'", created));
@@ -178,6 +179,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         }
 
         public void delete(String node) throws Exception {
+            delay(200);
             log.debug("Deleting node " + node);
             zk.delete(node, -1);
         }

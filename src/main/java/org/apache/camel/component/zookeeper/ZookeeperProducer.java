@@ -118,7 +118,6 @@ public class ZookeeperProducer extends DefaultProducer {
             this.node = getNodeFromMessage(in, configuration.getPath());
             this.version = getVersionFromMessage(in);
             this.payload = getPayloadFromExchange(exchange);
-
         }
     }
 
