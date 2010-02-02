@@ -31,7 +31,7 @@ public class CreateOperation extends ZooKeeperOperation<String> {
         try {
             String created = connection.create(node, data, permissions, createMode);
             if (log.isDebugEnabled()) {
-                log.debug(format("Created node '%s'", created));
+                log.debug(format("Created node '%s' using mode '%s'", created, createMode));
             }
             return new OperationResult<String>(created, new Stat()); // for completeness return empty stats.
         } catch (Exception e) {

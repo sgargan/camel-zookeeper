@@ -1,16 +1,23 @@
 package org.apache.camel.component.zookeeper;
 
+import static org.apache.camel.component.zookeeper.ZooKeeperMessage.ZOOKEEPER_CREATE_MODE;
+import static org.apache.camel.component.zookeeper.ZooKeeperMessage.ZOOKEEPER_NODE;
+
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.component.zookeeper.operations.GetChildrenOperation;
+import org.apache.zookeeper.CreateMode;
 import org.junit.Test;
 
 public class ZookeeperProducerTest extends ZooKeeperTestSupport {
 
     private String zookeeperUri;
+
+    private String testPayload = "TestPayload";
 
     @Override
     protected RouteBuilder[] createRouteBuilders() throws Exception {
@@ -40,7 +47,8 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         mock.expectedMessageCount(1);
         pipeline.expectedMessageCount(1);
 
-        Exchange e = createExchangeWithBody("TestPayload");
+
+        Exchange e = createExchangeWithBody(testPayload);
         e.setPattern(ExchangePattern.InOut);
         template.send("direct:roundtrip", e);
 
@@ -54,7 +62,7 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:consumed-from-node");
         mock.expectedMessageCount(1);
 
-        Exchange e = createExchangeWithBody("TestPayload");
+        Exchange e = createExchangeWithBody(testPayload);
         template.send("direct:roundtrip", e);
 
         mock.await(2, TimeUnit.SECONDS);
@@ -67,12 +75,44 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:consumed-from-set-node");
         mock.expectedMessageCount(1);
 
-        Exchange e = createExchangeWithBody("TestPayload");
+        Exchange e = createExchangeWithBody(testPayload);
         e.setPattern(ExchangePattern.InOut);
-        template.sendBodyAndHeader("direct:node-from-header", e, ZooKeeperMessage.ZOOKEEPER_NODE, "/set");
+        template.sendBodyAndHeader("direct:node-from-header", e, ZOOKEEPER_NODE, "/set");
 
         mock.await(5, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
+    }
+
+    @Test
+    public void setUsingCreateModeFromHeader() throws Exception {
+
+        client.createPersistent("/modes-test", "parent for modes");
+        for(CreateMode mode: CreateMode.values())
+        {
+            Exchange exchange = createExchangeWithBody(testPayload);
+            exchange.getIn().setHeader(ZOOKEEPER_CREATE_MODE, mode);
+            exchange.getIn().setHeader(ZOOKEEPER_NODE, "/modes-test/"+mode);
+            exchange.setPattern(ExchangePattern.InOut);
+            template.send("direct:node-from-header", exchange);
+        }
+        GetChildrenOperation listing = new GetChildrenOperation(getConnection(), "/modes-test");
+        assertEquals(CreateMode.values().length, listing.get().getResult().size());
+    }
+
+    @Test
+    public void setAndGetListing() throws Exception {
+
+        client.createPersistent("/set-listing", "parent for modes");
+        for(CreateMode mode: CreateMode.values())
+        {
+            Exchange exchange = createExchangeWithBody(testPayload);
+            exchange.getIn().setHeader(ZOOKEEPER_CREATE_MODE, mode);
+            exchange.getIn().setHeader(ZOOKEEPER_NODE, "/modes-test/"+mode);
+            exchange.setPattern(ExchangePattern.InOut);
+            template.send("zoo://localhost:39913/getListing?create=true", exchange);
+        }
+        GetChildrenOperation listing = new GetChildrenOperation(getConnection(), "/modes-test");
+        assertEquals(CreateMode.values().length, listing.get().getResult().size());
     }
 
 }

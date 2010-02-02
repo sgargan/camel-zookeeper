@@ -27,11 +27,15 @@ public class ZooKeeperUtils {
      */
     public static CreateMode getCreateMode(Message message) {
         CreateMode mode = null;
-        Integer modeHeader = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, Integer.class);
-        if (modeHeader != null) {
-            try {
-                mode = CreateMode.fromFlag(modeHeader);
-            } catch (Exception e) {
+
+        mode = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, CreateMode.class);
+        if (mode == null) {
+            Integer modeHeader = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, Integer.class);
+            if (modeHeader != null) {
+                try {
+                    mode = CreateMode.fromFlag(modeHeader);
+                } catch (Exception e) {
+                }
             }
         }
         return mode;
