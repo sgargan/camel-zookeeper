@@ -1,6 +1,5 @@
 package org.apache.camel.component.zookeeper.operations;
 
-
 import org.apache.camel.component.zookeeper.ZooKeeperTestSupport;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
@@ -19,9 +18,6 @@ public class ChildrenChangedOperationTest extends ZooKeeperTestSupport {
         client.createPersistent(path + "/child1", null);
         assertEquals(createChildListing("child1"), future.get().getResult());
     }
-
-
-
 
     @Test
     public void getsNotifiedWhenNodeIsDeleted() throws Exception {
