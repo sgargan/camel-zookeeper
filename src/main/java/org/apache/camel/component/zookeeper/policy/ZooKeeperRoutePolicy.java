@@ -1,14 +1,30 @@
 package org.apache.camel.component.zookeeper.policy;
 
+import static java.lang.String.format;
+
+import java.net.InetAddress;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.camel.Consumer;
+import org.apache.camel.CamelContext;
+import org.apache.camel.CamelContextAware;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePattern;
+import org.apache.camel.Processor;
 import org.apache.camel.Route;
-import org.apache.camel.component.zookeeper.ZooKeeperComponent;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.zookeeper.SequenceComparator;
+import org.apache.camel.component.zookeeper.ZooKeeperEndpoint;
+import org.apache.camel.component.zookeeper.ZooKeeperMessage;
+import org.apache.camel.impl.DefaultProducerTemplate;
 import org.apache.camel.impl.RoutePolicySupport;
+import org.apache.camel.util.ExchangeHelper;
+import org.apache.camel.util.UuidGenerator;
+import org.apache.zookeeper.CreateMode;
 
 /**
  * <code>ZooKeeperRoutePolicy</code> uses the leader election capabilities of a
@@ -26,74 +42,209 @@ import org.apache.camel.impl.RoutePolicySupport;
  * <p>
  * All instances of the policy must also be configured with the same path on the
  * ZooKeeper cluster where the election will be carried out. It is good practice
- * for this to indicate the application e.g. /someapplication/someroute/
+ * for this to indicate the application e.g. /someapplication/someroute/ note
+ * that these nodes should exist before using the policy.
  * <p>
- * Check @link{ http://hadoop.apache
+ * In order for this policy to work correctly it needs a configured camel
+ * context to set up the routes on which it relies. It is camel context aware,
+ * and so will be Check @link{ http://hadoop.apache
  * .org/zookeeper/docs/current/recipes.html#sc_leaderElection} for more on how
  * Leader election is achieved with ZooKeeper.
  *
  * @author sgargan
  */
-public class ZooKeeperRoutePolicy extends RoutePolicySupport {
+public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelContextAware {
 
-    private String electionNode;
+    private String uri;
+
     private int enabledCount;
+
+    private String candidateName;
 
     private final Lock lock = new ReentrantLock();
 
-    private AtomicBoolean shouldProcessExchanges = new AtomicBoolean();
+    private final CountDownLatch electionComplete = new CountDownLatch(1);
 
-    public ZooKeeperRoutePolicy() {
-        // TODO Auto-generated constructor stub
+    private AtomicBoolean shouldProcessExchanges = new AtomicBoolean();
+    private CamelContext camelContext;
+    private DefaultProducerTemplate template;
+
+    private boolean shouldStopConsumer;
+
+    public ZooKeeperRoutePolicy(String uri, int enabledCount) throws Exception {
+        this.uri = uri;
+        this.enabledCount = enabledCount;
+        createCandidateName();
     }
 
-    public ZooKeeperRoutePolicy(ZooKeeperComponent component, String electionNode, int enabledCount)
-    {
-        this.electionNode = electionNode;
-        this.enabledCount = enabledCount;
+    private void createCandidateName() throws Exception {
+        /** UUID would be enough, also using hostname for human readability */
+        StringBuilder b = new StringBuilder(InetAddress.getLocalHost().getCanonicalHostName());
+        b.append("-").append(UuidGenerator.get().generateUuid());
+        this.candidateName = b.toString();
     }
 
     @Override
     public void onExchangeBegin(Route route, Exchange exchange) {
-        if(!shouldProcessExchanges.get())
-        {
-            try {
-                lock.lock();
-                stopConsumer(route.getConsumer());
-
-            } catch (Exception e) {
-                handleException(e);
-            } finally {
-                lock.unlock();
+        awaitElectionResults();
+        if (!shouldProcessExchanges.get()) {
+            if (shouldStopConsumer) {
+                stopConsumer(route);
             }
-            throw new IllegalStateException("Failing the exchange");
-        }
-        else
-        {
-            try {
-                lock.lock();
-                startConsumer(route.getConsumer());
-            } catch (Exception e) {
-                handleException(e);
-            } finally {
-                lock.unlock();
+            IllegalStateException e = new IllegalStateException("Zookeeper based route policy prohibits processing exchanges, stopping route and failing the exchange");
+            exchange.setException(e);
+            throw e;
+        } else {
+            if (shouldStopConsumer) {
+                startConsumer(route);
             }
         }
     }
 
-
-
-    @Override
-    protected boolean startConsumer(Consumer consumer) throws Exception {
-        System.err.println("Starting consumer" + consumer);
-        return super.startConsumer(consumer);
+    private void awaitElectionResults() {
+        while (electionComplete.getCount() > 0) {
+            try {
+                electionComplete.await();
+            } catch (InterruptedException e1) {
+            }
+        }
     }
 
-    @Override
-    protected boolean stopConsumer(Consumer consumer) throws Exception {
-        System.err.println("Stopping consumer" + consumer);
-        return super.stopConsumer(consumer);
+    private void startConsumer(Route route) {
+        try {
+            lock.lock();
+            startConsumer(route.getConsumer());
+        } catch (Exception e) {
+            handleException(e);
+        } finally {
+            lock.unlock();
+        }
     }
 
+    private void stopConsumer(Route route) {
+        try {
+            lock.lock();
+            stopConsumer(route.getConsumer());
+
+        } catch (Exception e) {
+            handleException(e);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public boolean isShouldStopConsumer() {
+        return shouldStopConsumer;
+    }
+
+    public void setShouldStopConsumer(boolean shouldStopConsumer) {
+        this.shouldStopConsumer = shouldStopConsumer;
+    }
+
+    public CamelContext getCamelContext() {
+        return camelContext;
+    }
+
+    public void setCamelContext(CamelContext camelContext) {
+        this.camelContext = camelContext;
+        this.template = new DefaultProducerTemplate(camelContext);
+        createCandidateNode(camelContext);
+    }
+
+    private ZooKeeperEndpoint createCandidateNode(CamelContext camelContext) {
+        if (log.isInfoEnabled()) {
+            log.info(format("Initializing ZookeeperRoutePolicy with uri '%s'", uri));
+        }
+        ZooKeeperEndpoint zep = (ZooKeeperEndpoint)camelContext.getEndpoint(uri);
+        zep.getConfiguration().setCreate(true);
+        String fullpath = createFullPathToCandidate(zep);
+        Exchange e = zep.createExchange();
+        e.setPattern(ExchangePattern.InOut);
+        e.getIn().setHeader(ZooKeeperMessage.ZOOKEEPER_NODE, fullpath);
+        e.getIn().setHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, CreateMode.EPHEMERAL_SEQUENTIAL);
+        template.send(zep, e);
+
+        if (e.isFailed()) {
+            log.error("Error setting up election node " + fullpath, e.getException());
+        } else {
+            if (log.isInfoEnabled()) {
+                log.info(format("Candidate node '%s' has been created", fullpath));
+            }
+            try {
+                if (zep != null) {
+                    camelContext.addRoutes(new CandidateMonitoringRoute(zep));
+                }
+            } catch (Exception ex) {
+                log.error("Error configuring ZookeeperRoutePolicy", ex);
+            }
+        }
+        return zep;
+
+    }
+
+    private String createFullPathToCandidate(ZooKeeperEndpoint zep) {
+        String fullpath = zep.getConfiguration().getPath();
+        if (!fullpath.endsWith("/")) {
+            fullpath += "/";
+        }
+        fullpath += candidateName;
+        return fullpath;
+    }
+
+    private class CandidateMonitoringRoute extends RouteBuilder {
+
+        private ZooKeeperEndpoint zep;
+
+        final SequenceComparator comparator = new SequenceComparator();
+
+        public CandidateMonitoringRoute(ZooKeeperEndpoint zep) {
+            this.zep = zep;
+            zep.getConfiguration().setListChildren(true);
+            zep.getConfiguration().setRepeat(true);
+        }
+
+        @Override
+        public void configure() throws Exception {
+
+            /**
+             * TODO: this is cheap cheerful but suboptimal; it suffers from the
+             * 'herd effect' that on any change to the candidates list every
+             * policy instance will ask for the entire candidate list again.
+             * This is fine for small numbers of nodes but would get very noisy
+             * if large numbers were involved.
+             * <p>
+             * Better would be to find the position of this node in the list and
+             * watch the node in the position ahead node ahead of this and only
+             * request the candidate list when its status changes. This will
+             * require enhancing the consumer to allow custom operation lists.
+             */
+            from(zep).sortBody(comparator).process(new Processor() {
+
+                @SuppressWarnings("unchecked")
+                public void process(Exchange e) throws Exception {
+                    List<String> candidates = (List<String>)ExchangeHelper.getMandatoryInBody(e);
+
+                    int location = Math.abs(Collections.binarySearch(candidates, candidateName));
+                    /**
+                     * check if the item at this location starts with this nodes
+                     * candidate name
+                     */
+                    if (isOurCandidateAtLocationInCandidatesList(candidates, location)) {
+
+                        shouldProcessExchanges.set(location <= enabledCount);
+                        if (log.isDebugEnabled()) {
+                            log.debug(format("This node is number '%d' on the candidate list, route is configured for the top '%d'. Exchange processing will be %s", location,
+                                             enabledCount, shouldProcessExchanges.get() ? "enabled" : "disabled"));
+                        }
+                    }
+                    electionComplete.countDown();
+                }
+
+                private boolean isOurCandidateAtLocationInCandidatesList(List<String> candidates, int location) {
+                    return location <= candidates.size() && candidates.get(location - 1).startsWith(candidateName);
+                }
+            });
+        }
+    }
 
 }
