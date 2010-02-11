@@ -33,6 +33,10 @@ public class ConnectionHolder implements Watcher {
     }
 
     public ZooKeeper getZooKeeper() {
+        if(zookeeper != null)
+        {
+            return zookeeper;
+        }
         if (configuration.getConnectString() == null) {
             throw new RuntimeCamelException("Cannot create ZooKeeper connection as connection string is null. Have servers been configured?");
         }
@@ -74,6 +78,9 @@ public class ConnectionHolder implements Watcher {
     public void closeConnection() {
         try {
             zookeeper.close();
+            if (log.isDebugEnabled()) {
+                log.debug(format("Shutting down connection to Zookeeper cluster %s", configuration.getConnectString()));
+            }
         } catch (InterruptedException e) {
             log.error("Error closing zookeeper connection.", e);
         }
