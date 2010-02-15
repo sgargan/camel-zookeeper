@@ -5,6 +5,8 @@ import static java.lang.String.format;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -65,11 +67,15 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
 
     private final CountDownLatch electionComplete = new CountDownLatch(1);
 
+    private Set<Route> suspendedRoutes = new CopyOnWriteArraySet<Route>();
+
     private AtomicBoolean shouldProcessExchanges = new AtomicBoolean();
+
     private CamelContext camelContext;
+
     private DefaultProducerTemplate template;
 
-    private boolean shouldStopConsumer;
+    private boolean shouldStopConsumer = true;
 
     public ZooKeeperRoutePolicy(String uri, int enabledCount) throws Exception {
         this.uri = uri;
@@ -113,7 +119,10 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
     private void startConsumer(Route route) {
         try {
             lock.lock();
-            startConsumer(route.getConsumer());
+            if (suspendedRoutes.contains(route)) {
+                startConsumer(route.getConsumer());
+                suspendedRoutes.remove(route);
+            }
         } catch (Exception e) {
             handleException(e);
         } finally {
@@ -124,7 +133,30 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
     private void stopConsumer(Route route) {
         try {
             lock.lock();
-            stopConsumer(route.getConsumer());
+            // check that we should still suspend once the lock is acquired
+            if (!suspendedRoutes.contains(route) && !shouldProcessExchanges.get()) {
+                stopConsumer(route.getConsumer());
+                suspendedRoutes.add(route);
+            }
+        } catch (Exception e) {
+            handleException(e);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void startAllStoppedConsumers() {
+        try {
+            lock.lock();
+            if (!suspendedRoutes.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(format("'%d' have been stopped previously by poilcy, restarting.", suspendedRoutes.size()));
+                }
+                for (Route suspended : suspendedRoutes) {
+                    startConsumer(suspended.getConsumer());
+                }
+                suspendedRoutes.clear();
+            }
 
         } catch (Exception e) {
             handleException(e);
@@ -172,7 +204,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
             }
             try {
                 if (zep != null) {
-                    camelContext.addRoutes(new CandidateMonitoringRoute(zep));
+                    camelContext.addRoutes(new ElectoralMonitorRoute(zep));
                 }
             } catch (Exception ex) {
                 log.error("Error configuring ZookeeperRoutePolicy", ex);
@@ -191,13 +223,13 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
         return fullpath;
     }
 
-    private class CandidateMonitoringRoute extends RouteBuilder {
+    private class ElectoralMonitorRoute extends RouteBuilder {
 
         private ZooKeeperEndpoint zep;
 
         final SequenceComparator comparator = new SequenceComparator();
 
-        public CandidateMonitoringRoute(ZooKeeperEndpoint zep) {
+        public ElectoralMonitorRoute(ZooKeeperEndpoint zep) {
             this.zep = zep;
             zep.getConfiguration().setListChildren(true);
             zep.getConfiguration().setRepeat(true);
@@ -236,6 +268,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
                             log.debug(format("This node is number '%d' on the candidate list, route is configured for the top '%d'. Exchange processing will be %s", location,
                                              enabledCount, shouldProcessExchanges.get() ? "enabled" : "disabled"));
                         }
+                        startAllStoppedConsumers();
                     }
                     electionComplete.countDown();
                 }

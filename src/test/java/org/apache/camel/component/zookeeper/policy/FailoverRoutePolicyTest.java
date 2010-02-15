@@ -22,19 +22,16 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
     }
 
     @Test
-    public void routeCanBeControlledByPolicy() throws Exception {
+    public void masterSlaveScenarioContolledByPolicy() throws Exception {
         ZookeeperPolicyEnforcedContext tetrisisMasterOfBlocks = createEnforcedContext("master");
         ZookeeperPolicyEnforcedContext slave = createEnforcedContext("slave");
+
+        // http://bit.ly/9gTlGe ;)
         tetrisisMasterOfBlocks.sendMessageToEnforcedRoute("LIIIIIIIIIINNNNNNNNNEEEEEEE PEEEEEEICCCE", 1);
         slave.sendMessageToEnforcedRoute("But lord there is no place for a square!??!", 0);
 
         // trigger failover by killing the master...
         tetrisisMasterOfBlocks.shutdown();
-        delay(10000);
-        System.err.println("");
-        System.err.println("");
-        System.err.println("");
-        System.err.println("");
         slave.sendMessageToEnforcedRoute("What a cruel and angry god...", 1);
     }
 
@@ -49,6 +46,7 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
             routename = name;
             template = new DefaultProducerTemplate(controlledContext);
             mock = controlledContext.getEndpoint("mock:controlled", MockEndpoint.class);
+            mock.setSleepForEmptyTest(1000);
             controlledContext.addRoutes(new FailoverRoute(name));
             controlledContext.start();
         }
