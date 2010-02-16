@@ -24,6 +24,9 @@ import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 
+/**
+ * <code>ZooKeeperEndpoint</code>
+ */
 public class ZooKeeperEndpoint extends DefaultEndpoint {
     private ZooKeeperConfiguration configuration;
     private ZooKeeperConnectionManager connectionManager;
@@ -85,14 +88,6 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
         getConfiguration().setServers(servers);
     }
 
-    @ManagedAttribute
-    public boolean shouldReuseConnection() {
-        return getConfiguration().shouldReuseConnection();
-    }
-
-    public void setReuseConnection(boolean reuseConnection) {
-        getConfiguration().setReuseConnection(reuseConnection);
-    }
 
     @ManagedAttribute
     public boolean shouldListChildren() {

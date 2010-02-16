@@ -1,3 +1,19 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.camel.component.zookeeper;
 
 import static java.lang.String.format;
@@ -20,6 +36,10 @@ import org.apache.camel.impl.DefaultConsumer;
 import org.apache.camel.util.concurrent.ExecutorServiceHelper;
 import org.apache.zookeeper.ZooKeeper;
 
+/**
+ * <code>ZooKeeperConsumer</code> uses various {@link ZooKeeperOperation} to
+ * interact and consume data from a ZooKeeper cluster.
+ */
 @SuppressWarnings("unchecked")
 public class ZooKeeperConsumer extends DefaultConsumer {
 
@@ -67,7 +87,6 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         connectionManager.shutdown();
     }
 
-
     private void initializeConsumer() {
         String node = configuration.getPath();
         if (configuration.listChildren()) {
@@ -82,7 +101,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initailizing consumption of data on node '%s'", node));
             }
-           addBasicDataConsumeSequence(node);
+            addBasicDataConsumeSequence(node);
         }
     }
 
@@ -116,8 +135,8 @@ public class ZooKeeperConsumer extends DefaultConsumer {
 
                 try {
                     current = operations.take();
-                    if(log.isTraceEnabled()) {
-                        log.trace(format("Processing '%s' operation",current.getClass().getSimpleName()));
+                    if (log.isTraceEnabled()) {
+                        log.trace(format("Processing '%s' operation", current.getClass().getSimpleName()));
                     }
                 } catch (InterruptedException e) {
                     continue;
@@ -155,14 +174,14 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         }
     }
 
-    private void addBasicDataConsumeSequence(String node){
+    private void addBasicDataConsumeSequence(String node) {
         operations.clear();
         operations.add(new AnyOfOperations(node, new ExistsOperation(connection, node), new ExistenceChangedOperation(connection, node)));
         operations.add(new GetDataOperation(connection, node));
         operations.add(new DataChangedOperation(connection, node, false));
     }
 
-    private void addBasicChildListingSequence(String node){
+    private void addBasicChildListingSequence(String node) {
         operations.clear();
         operations.add(new AnyOfOperations(node, new ExistsOperation(connection, node), new ExistenceChangedOperation(connection, node)));
         operations.add(new GetChildrenOperation(connection, node));

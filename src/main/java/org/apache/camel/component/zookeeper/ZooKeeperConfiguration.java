@@ -22,9 +22,11 @@ import java.util.List;
 import org.apache.camel.RuntimeCamelException;
 
 /**
- * <code>ZookeeperConfiguration</code> encapsulates the configuration that may
- * be applied to a {@link ZooKeeperComponent} and inherited by the
- * {@link ZooKeeperEndpoint}s it creates.
+ * <code>ZookeeperConfiguration</code> encapsulates the configuration used to
+ * interact with a ZooKeeper cluster. Most typically it is parsed from endpoint
+ * uri but may also be configured programmatically and applied to a
+ * {@link ZooKeeperComponent}. A copy of this component's configuration will be
+ * injected into any {@link ZooKeeperEndpoint}s the compoment creates.
  *
  * @version $
  */
@@ -33,7 +35,6 @@ public class ZooKeeperConfiguration implements Cloneable {
     private int timeout = 5000;
     private int backoff = 5000;
     private List<String> servers;
-    private boolean reuseConnection = true;
     private boolean changed;
     private int sessionId;
     private byte[] password;
@@ -57,15 +58,6 @@ public class ZooKeeperConfiguration implements Cloneable {
 
     public void setServers(List<String> servers) {
         this.servers = servers;
-    }
-
-    public boolean shouldReuseConnection() {
-        return reuseConnection;
-    }
-
-    public void setReuseConnection(boolean reuseConnection) {
-        this.reuseConnection = reuseConnection;
-        changed = true;
     }
 
     public int getTimeout() {
@@ -94,12 +86,12 @@ public class ZooKeeperConfiguration implements Cloneable {
     }
 
     public String getConnectString() {
-        //return StringHelper.toStringCommaSeparated(servers);
+        // return StringHelper.toStringCommaSeparated(servers);
         StringBuilder b = new StringBuilder();
-        for(String server: servers) {
+        for (String server : servers) {
             b.append(server).append(",");
         }
-        b.setLength(b.length() -1);
+        b.setLength(b.length() - 1);
         return b.toString();
 
     }
@@ -108,7 +100,7 @@ public class ZooKeeperConfiguration implements Cloneable {
         return password;
     }
 
-    public int getSessionId(){
+    public int getSessionId() {
         return sessionId;
     }
 
@@ -124,7 +116,7 @@ public class ZooKeeperConfiguration implements Cloneable {
         return repeat;
     }
 
-    public void setRepeat(boolean repeat){
+    public void setRepeat(boolean repeat) {
         this.repeat = repeat;
     }
 
@@ -140,8 +132,7 @@ public class ZooKeeperConfiguration implements Cloneable {
         return awaitCreation;
     }
 
-    public void setAwaitExistance(boolean awaitCreation)
-    {
+    public void setAwaitExistance(boolean awaitCreation) {
         this.awaitCreation = awaitCreation;
     }
 
@@ -160,7 +151,5 @@ public class ZooKeeperConfiguration implements Cloneable {
     public boolean shouldCreate() {
         return shouldCreate;
     }
-
-
 
 }
