@@ -3,6 +3,10 @@ package org.apache.camel.component.zookeeper.operations;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * <code>ExistsOperation</code> is a basic ZooKeeper operation used to test
+ * the existence of a given node.
+ */
 public class ExistsOperation extends ZooKeeperOperation<String> {
 
     private boolean mustExist;

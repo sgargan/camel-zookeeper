@@ -5,6 +5,11 @@ import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * <code>DataChangedOperation</code> is an watch driven operation. It will wait
+ * for an watched event indicating that a given node has been created or
+ * deleted.
+ */
 public class ExistenceChangedOperation extends FutureEventDrivenOperation<String> {
 
     public ExistenceChangedOperation(ZooKeeper connection, String znode) {
@@ -12,7 +17,7 @@ public class ExistenceChangedOperation extends FutureEventDrivenOperation<String
     }
 
     @Override
-    protected void installWatch(){
+    protected void installWatch() {
         connection.exists(getNode(), this, new StatCallback() {
             public void processResult(int rc, String path, Object ctx, Stat stat) {
             }

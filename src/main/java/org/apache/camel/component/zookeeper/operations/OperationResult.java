@@ -4,6 +4,10 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * <code>OperationResult</code> is used to ecapsulate the results of executing a
+ * {@link ZooKeeperOperation}
+ */
 public class OperationResult<ResultType> {
     private Stat statistics;
     private ResultType result;

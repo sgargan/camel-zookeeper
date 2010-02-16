@@ -6,10 +6,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * <code>GetDataOperation</code> defines an operation to immediately retrieve
+ * <code>GetDataOperation</code> is a basic operation to immediately retrieve
  * the data associated with a given ZooKeeper node.
- *
- * @author sgargan
  */
 public class GetDataOperation extends ZooKeeperOperation<byte[]> {
 

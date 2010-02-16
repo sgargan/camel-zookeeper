@@ -15,9 +15,9 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
 
     protected CamelContext createCamelContext() throws Exception {
         disableJMX();
-        // set up the parent used to control the election
+        // set up the parent nodes used to control the election
         client.createPersistent("/someapp", "App node to contain policy election nodes...");
-        client.createPersistent("/someapp/somepolicy", "Policy node used by route policy to control routes...");
+        client.createPersistent("/someapp/somepolicy", "Node used by route policy to control active routes...");
         return super.createCamelContext();
     }
 

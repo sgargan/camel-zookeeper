@@ -8,10 +8,9 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * <code>ChildrenChangedOperation</code> is an event driven operation.
- * It will wait for an event indicating that the children associated with a
+ * <code>ChildrenChangedOperation</code> is an watch driven operation.
+ * It will wait for an watched event indicating that the children associated with a
  * given node have been modified before retrieving the changed list.
- *
  */
 public class ChildrenChangedOperation extends FutureEventDrivenOperation<List<String>> {
 

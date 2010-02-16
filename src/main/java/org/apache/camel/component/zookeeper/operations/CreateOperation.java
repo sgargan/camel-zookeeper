@@ -10,6 +10,10 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * <code>CreateOperation</code> is a basic Zookeeper operation used to create
+ * and set the data contained in a given node
+ */
 public class CreateOperation extends ZooKeeperOperation<String> {
 
     private static final List<ACL> DefaultPermissions = Ids.OPEN_ACL_UNSAFE;
@@ -33,7 +37,8 @@ public class CreateOperation extends ZooKeeperOperation<String> {
             if (log.isDebugEnabled()) {
                 log.debug(format("Created node '%s' using mode '%s'", created, createMode));
             }
-            return new OperationResult<String>(created, new Stat()); // for completeness return empty stats.
+            // for consistency with other operations return an empty stats set.
+            return new OperationResult<String>(created, new Stat());
         } catch (Exception e) {
             return new OperationResult<String>(e);
         }
@@ -50,6 +55,5 @@ public class CreateOperation extends ZooKeeperOperation<String> {
     public void setCreateMode(CreateMode createMode) {
         this.createMode = createMode;
     }
-
 
 }

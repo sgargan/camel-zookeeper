@@ -11,9 +11,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
- * <code>ZooKeeperOperation</code>
- *
- * @author sgargan
+ * <code>ZooKeeperOperation</code> is the base class for wrapping various
+ * ZooKeeper API instructions and callbacks into callable and composable operation
+ * objects.
  */
 @SuppressWarnings("unchecked")
 public abstract class ZooKeeperOperation<ResultType> {
@@ -82,8 +82,7 @@ public abstract class ZooKeeperOperation<ResultType> {
         return node;
     }
 
-    public boolean shouldProduceExchange()
-    {
+    public boolean shouldProduceExchange() {
         return producesExchange;
     }
 

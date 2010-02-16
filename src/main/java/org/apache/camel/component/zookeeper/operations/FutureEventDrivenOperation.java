@@ -16,8 +16,6 @@ import org.apache.zookeeper.Watcher.Event.EventType;
  * <code>FutureEventDrivenOperation</code> uses ZooKeepers {@link Watcher}
  * mechanism to await specific ZooKeeper events. Typically this is used to await changes
  * to a particular node before retrieving the change.
- *
- * @author sgargan
  */
 public abstract class FutureEventDrivenOperation<ResultType> extends ZooKeeperOperation<ResultType> implements Watcher {
 

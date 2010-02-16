@@ -7,6 +7,10 @@ import java.util.List;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * <code>GetChildrenOperation</code> is a basic ZooKeeper operation used to retrieve the
+ * list of children belonging to a given ZooKeeper node.
+ */
 public class GetChildrenOperation extends ZooKeeperOperation<List<String>>{
 
     public GetChildrenOperation(ZooKeeper connection, String node) {
@@ -30,5 +34,4 @@ public class GetChildrenOperation extends ZooKeeperOperation<List<String>>{
              return new OperationResult<List<String>>(e);
          }
      }
-
 }

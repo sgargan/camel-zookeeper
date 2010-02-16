@@ -5,6 +5,11 @@ import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * <code>DataChangedOperation</code> is an watch driven operation. It will wait
+ * for an watched event indicating that the data contained in a given
+ * node has changed before optionally retrieving the changed data.
+ */
 @SuppressWarnings("unchecked")
 public class DataChangedOperation extends FutureEventDrivenOperation<byte[]> {
 
