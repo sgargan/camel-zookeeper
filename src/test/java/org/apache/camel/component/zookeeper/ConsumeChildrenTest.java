@@ -21,10 +21,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.InvalidPayloadException;
+import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.zookeeper.NaturalSortComparator.Order;
 import org.apache.camel.util.ExchangeHelper;
+import org.apache.zookeeper.data.Stat;
 import org.junit.Test;
 
 @SuppressWarnings("unchecked")
@@ -65,6 +67,7 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         for (Exchange received : mock.getReceivedExchanges()) {
             List<String> actual = ExchangeHelper.getMandatoryInBody(received, List.class);
             assertEquals(expected[index++], actual);
+            validateChildrenCountChangesEachTime(mock);
         }
     }
 
@@ -72,11 +75,10 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         int lastChildCount = -1;
         List<Exchange> received = mock.getReceivedExchanges();
         for (int x = 0; x < received.size(); x++) {
-            ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
-            int childCount = zkm.getStatistics().getNumChildren();
+            Message zkm = mock.getReceivedExchanges().get(x).getIn();
+            int childCount = ((Stat) zkm.getHeader(ZooKeeperMessage.ZOOKEEPER_STATISTICS)).getNumChildren();
             assertNotSame("Num of children did not change", lastChildCount, childCount);
             lastChildCount = childCount;
         }
     }
-
 }

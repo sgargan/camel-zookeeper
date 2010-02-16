@@ -17,8 +17,6 @@
 package org.apache.camel.component.zookeeper;
 
 import org.apache.camel.impl.DefaultMessage;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -41,31 +39,19 @@ public class ZooKeeperMessage extends DefaultMessage {
 
     public static final String ZOOKEEPER_CREATE_MODE = "CamelZookeeperCreateMode";
 
+    public static final String ZOOKEEPER_STATISTICS = "CamelZookeeperStatistics";
+
     private String path;
 
     private Stat statistics;
-
-    private Code code;
 
     public ZooKeeperMessage(String path, Stat statistics) {
         this.path = path;
         this.statistics = statistics;
         this.setHeader(ZOOKEEPER_NODE, path);
+        this.setHeader(ZOOKEEPER_STATISTICS, statistics);
     }
 
-    public ZooKeeperMessage(String path, Stat statistics, Code code) {
-        this(path, statistics);
-        this.code = code;
-        this.setHeader(ZOOKEEPER_ERROR_CODE, code);
-    }
-
-    public void setCreateMode(CreateMode mode) {
-        this.setHeader(ZOOKEEPER_ERROR_CODE, mode.toFlag());
-    }
-
-    public CreateMode getCreateMode() {
-        return ZooKeeperUtils.getCreateMode(this);
-    }
 
     public Stat getStatistics() {
         return statistics;
@@ -75,7 +61,4 @@ public class ZooKeeperMessage extends DefaultMessage {
         return path;
     }
 
-    public Code getCode() {
-        return code;
-    }
 }

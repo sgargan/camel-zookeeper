@@ -22,12 +22,16 @@ import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
+import org.apache.camel.spi.ManagementAware;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
 
 /**
  * <code>ZooKeeperEndpoint</code>
  */
-public class ZooKeeperEndpoint extends DefaultEndpoint {
+@ManagedResource("ZooKeeper Endpoint")
+public class ZooKeeperEndpoint extends DefaultEndpoint implements ManagementAware<ZooKeeperEndpoint> {
     private ZooKeeperConfiguration configuration;
     private ZooKeeperConnectionManager connectionManager;
 
@@ -62,10 +66,31 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
     }
 
     @ManagedAttribute
+    public byte[] getSessionPassword() {
+        return getConfiguration().getSessionPassword();
+    }
+
+    @ManagedAttribute
+    public int getSessionId() {
+        return getConfiguration().getSessionId();
+    }
+
+    @ManagedAttribute
+    public void setPath(String path) {
+        getConfiguration().setPath(path);
+    }
+
+    @ManagedAttribute
+    public String getPath() {
+        return getConfiguration().getPath();
+    }
+
+    @ManagedAttribute
     public int getTimeout() {
         return getConfiguration().getTimeout();
     }
 
+    @ManagedAttribute
     public void setTimeout(int timeout) {
         getConfiguration().setTimeout(timeout);
     }
@@ -75,6 +100,7 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
         return getConfiguration().shouldRepeat();
     }
 
+    @ManagedAttribute
     public void setRepeat(boolean shouldRepeat) {
         getConfiguration().setRepeat(shouldRepeat);
     }
@@ -84,25 +110,36 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
         return getConfiguration().getServers();
     }
 
+    @ManagedAttribute
     public void setServers(List<String> servers) {
         getConfiguration().setServers(servers);
     }
 
+    // TODO: check how to allow should to indicate getter of an attribute pair
+//    public boolean shouldListChildren() {
+//        return getConfiguration().listChildren();
+//    }
 
     @ManagedAttribute
-    public boolean shouldListChildren() {
+    public boolean getListChildren() {
         return getConfiguration().listChildren();
     }
 
+    @ManagedAttribute
     public void setListChildren(boolean listChildren) {
         getConfiguration().setListChildren(listChildren);
     }
 
+//    public boolean shouldCreate() {
+//        return getConfiguration().shouldCreate();
+//    }
+
     @ManagedAttribute
-    public boolean shouldCreate() {
+    public boolean getCreate() {
         return getConfiguration().shouldCreate();
     }
 
+    @ManagedAttribute
     public void setCreate(boolean shouldCreate) {
         getConfiguration().setCreate(shouldCreate);
     }
@@ -112,16 +149,38 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
         return getConfiguration().getBackoff();
     }
 
-    public void setBackoff(int backoff) {
+    @ManagedAttribute
+    public void setBackoff(long backoff) {
         getConfiguration().setBackoff(backoff);
     }
 
+//    public boolean shouldAwaitExistence() {
+//        return getConfiguration().shouldAwaitExistence();
+//    }
+
     @ManagedAttribute
-    public boolean shouldAwaitExistence() {
+    public boolean getAwaitExistence() {
         return getConfiguration().shouldAwaitExistence();
     }
 
+    @ManagedAttribute
     public void setAwaitExistence(boolean awaitExistence) {
         getConfiguration().setAwaitExistance(awaitExistence);
     }
+
+    @ManagedOperation
+    public void addServer(String server) {
+        getConfiguration().addZookeeperServer(server);
+    }
+
+    @ManagedOperation
+    public void clearServers() {
+        getConfiguration().getServers().clear();
+    }
+
+    public Object getManagedObject(ZooKeeperEndpoint arg0) {
+        return this;
+    }
+
+
 }

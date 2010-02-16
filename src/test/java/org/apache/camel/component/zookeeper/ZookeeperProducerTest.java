@@ -42,15 +42,14 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         return new RouteBuilder[] {new RouteBuilder() {
             public void configure() throws Exception {
                 zookeeperUri = "zoo://localhost:39913/node?create=true";
-                from("direct:roundtrip"). to(zookeeperUri).to("mock:producer-out");
+                from("direct:roundtrip").to(zookeeperUri).to("mock:producer-out");
                 from(zookeeperUri).to("mock:consumed-from-node");
             }
         }, new RouteBuilder() {
             public void configure() throws Exception {
                 from("direct:no-create-fails-set").to("zoo://localhost:39913/doesnotexist");
             }
-        },
-        new RouteBuilder() {
+        }, new RouteBuilder() {
             public void configure() throws Exception {
                 from("direct:node-from-header").to("zoo://localhost:39913/notset?create=true");
                 from("zoo://localhost:39913/set?create=true").to("mock:consumed-from-set-node");
@@ -64,7 +63,6 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         MockEndpoint pipeline = getMockEndpoint("mock:producer-out");
         mock.expectedMessageCount(1);
         pipeline.expectedMessageCount(1);
-
 
         Exchange e = createExchangeWithBody(testPayload);
         e.setPattern(ExchangePattern.InOut);
@@ -85,7 +83,6 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
 
         mock.await(2, TimeUnit.SECONDS);
         mock.assertIsSatisfied();
-        assertNull(e.getOut().getBody());
     }
 
     @Test
@@ -105,11 +102,10 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
     public void setUsingCreateModeFromHeader() throws Exception {
 
         client.createPersistent("/modes-test", "parent for modes");
-        for(CreateMode mode: CreateMode.values())
-        {
+        for (CreateMode mode : CreateMode.values()) {
             Exchange exchange = createExchangeWithBody(testPayload);
             exchange.getIn().setHeader(ZOOKEEPER_CREATE_MODE, mode);
-            exchange.getIn().setHeader(ZOOKEEPER_NODE, "/modes-test/"+mode);
+            exchange.getIn().setHeader(ZOOKEEPER_NODE, "/modes-test/" + mode);
             exchange.setPattern(ExchangePattern.InOut);
             template.send("direct:node-from-header", exchange);
         }
@@ -132,4 +128,20 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         assertEquals("firstborn", children.get(0));
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testZookeeperMessage() throws Exception {
+
+        MockEndpoint mock = getMockEndpoint("mock:consumed-from-node");
+        mock.expectedMessageCount(1);
+
+        Exchange exchange = createExchangeWithBody(testPayload);
+        template.send("direct:roundtrip", exchange);
+        mock.await();
+        mock.assertIsSatisfied();
+
+        ZooKeeperMessage zke = (ZooKeeperMessage)mock.getReceivedExchanges().get(0).getIn();
+        assertEquals("/node", zke.getPath());
+        assertNotNull(zke.getStatistics());
+    }
 }

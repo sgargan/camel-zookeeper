@@ -24,16 +24,16 @@ import org.apache.camel.RuntimeCamelException;
 /**
  * <code>ZookeeperConfiguration</code> encapsulates the configuration used to
  * interact with a ZooKeeper cluster. Most typically it is parsed from endpoint
- * uri but may also be configured programmatically and applied to a
+ * uri but may also be configured programatically and applied to a
  * {@link ZooKeeperComponent}. A copy of this component's configuration will be
- * injected into any {@link ZooKeeperEndpoint}s the compoment creates.
+ * injected into any {@link ZooKeeperEndpoint}s the component creates.
  *
  * @version $
  */
 public class ZooKeeperConfiguration implements Cloneable {
 
     private int timeout = 5000;
-    private int backoff = 5000;
+    private long backoff = 5000;
     private List<String> servers;
     private boolean changed;
     private int sessionId;
@@ -140,7 +140,7 @@ public class ZooKeeperConfiguration implements Cloneable {
         return backoff;
     }
 
-    public void setBackoff(int backoff) {
+    public void setBackoff(long backoff) {
         this.backoff = backoff;
     }
 
