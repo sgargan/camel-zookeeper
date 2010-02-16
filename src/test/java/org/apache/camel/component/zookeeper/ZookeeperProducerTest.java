@@ -19,6 +19,7 @@ package org.apache.camel.component.zookeeper;
 import static org.apache.camel.component.zookeeper.ZooKeeperMessage.ZOOKEEPER_CREATE_MODE;
 import static org.apache.camel.component.zookeeper.ZooKeeperMessage.ZOOKEEPER_NODE;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Exchange;
@@ -26,6 +27,7 @@ import org.apache.camel.ExchangePattern;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.zookeeper.operations.GetChildrenOperation;
+import org.apache.camel.util.ExchangeHelper;
 import org.apache.zookeeper.CreateMode;
 import org.junit.Test;
 
@@ -116,19 +118,18 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void setAndGetListing() throws Exception {
 
-        client.createPersistent("/set-listing", "parent for modes");
-        for(CreateMode mode: CreateMode.values())
-        {
-            Exchange exchange = createExchangeWithBody(testPayload);
-            exchange.getIn().setHeader(ZOOKEEPER_CREATE_MODE, mode);
-            exchange.getIn().setHeader(ZOOKEEPER_NODE, "/modes-test/"+mode);
-            exchange.setPattern(ExchangePattern.InOut);
-            template.send("zoo://localhost:39913/getListing?create=true", exchange);
-        }
-        GetChildrenOperation listing = new GetChildrenOperation(getConnection(), "/modes-test");
-        assertEquals(CreateMode.values().length, listing.get().getResult().size());
+        client.createPersistent("/set-listing", "parent for set and list test");
+
+        Exchange exchange = createExchangeWithBody(testPayload);
+        exchange.getIn().setHeader(ZOOKEEPER_NODE, "/set-listing/firstborn");
+        exchange.setPattern(ExchangePattern.InOut);
+        template.send("zoo://localhost:39913/set-listing?create=true&listChildren=true", exchange);
+        List<String> children = ExchangeHelper.getMandatoryOutBody(exchange, List.class);
+        assertEquals(1, children.size());
+        assertEquals("firstborn", children.get(0));
     }
 
 }

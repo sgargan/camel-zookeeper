@@ -98,7 +98,7 @@ public class ZookeeperProducer extends DefaultProducer {
     }
 
     private OperationResult listChildren(ProductionContext context) throws Exception {
-        return new GetChildrenOperation(context.connection, context.node).get();
+        return new GetChildrenOperation(context.connection, configuration.getPath()).get();
     }
 
     /** Simple container to avoid passing all these around as parameters */
