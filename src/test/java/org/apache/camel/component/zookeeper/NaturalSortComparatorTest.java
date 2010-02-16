@@ -33,10 +33,11 @@ public class NaturalSortComparatorTest {
 
         List<String> sorted = Arrays.asList(new String[] {"0", "1", "3", "4.0", "11", "30", "55", "225", "333",
                                                           "camel-2.1.0", "camel-2.1.1","camel-2.1.1-SNAPSHOT", "camel-2.2.0"});
+
         List<String> unsorted = new ArrayList<String>(sorted);
         Collections.shuffle(unsorted);
         Collections.sort(unsorted, new NaturalSortComparator());
-         compareLists(sorted, unsorted);
+        compareLists(sorted, unsorted);
 
         Collections.shuffle(unsorted);
         Collections.sort(unsorted, new NaturalSortComparator(Order.Descending));
@@ -45,9 +46,7 @@ public class NaturalSortComparatorTest {
     }
 
     private void compareLists(List<String> sorted, List<String> unsorted) {
-        System.err.println(sorted);
-        System.err.println(unsorted);
-        for (int x = 0; x < unsorted.size(); x++) {
+       for (int x = 0; x < unsorted.size(); x++) {
             assertEquals(sorted.get(x), unsorted.get(x));
         }
     }
