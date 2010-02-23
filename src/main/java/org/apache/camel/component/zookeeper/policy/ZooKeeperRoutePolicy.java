@@ -113,9 +113,10 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
             if (shouldStopConsumer) {
                 stopConsumer(route);
             }
+
             IllegalStateException e = new IllegalStateException("Zookeeper based route policy prohibits processing exchanges, stopping route and failing the exchange");
             exchange.setException(e);
-            throw e;
+
         } else {
             if (shouldStopConsumer) {
                 startConsumer(route);

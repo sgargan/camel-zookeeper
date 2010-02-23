@@ -19,12 +19,14 @@ package org.apache.camel.component.zookeeper.policy;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.ExchangePattern;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.zookeeper.ZooKeeperTestSupport;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.impl.DefaultProducerTemplate;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 
 public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
@@ -62,7 +64,6 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
             routename = name;
             template = new DefaultProducerTemplate(controlledContext);
             mock = controlledContext.getEndpoint("mock:controlled", MockEndpoint.class);
-            mock.setSleepForEmptyTest(1000);
             controlledContext.addRoutes(new FailoverRoute(name));
             controlledContext.start();
         }
@@ -70,18 +71,20 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
         public void sendMessageToEnforcedRoute(String message, int expected) throws InterruptedException {
             mock.expectedMessageCount(expected);
             try {
-                template.requestBody("vm:"+routename, message);
+                template.sendBody("vm:"+routename, ExchangePattern.InOut, message);
             } catch (Exception e) {
                 if (expected > 0) {
                     fail("Expected messages...");
                 }
             }
             mock.await(2, TimeUnit.SECONDS);
-            mock.assertIsSatisfied();
+            mock.assertIsSatisfied(1000);
         }
 
         public void shutdown() throws Exception {
+            LogFactory.getLog(getClass()).debug("stopping");
             controlledContext.stop();
+            LogFactory.getLog(getClass()).debug("stopped");
         }
     }
 
