@@ -1,0 +1,45 @@
+This is a component module for Apache Camel to allow interaction with a ZooKeeper Distributed Coordination Cluster (http://hadoop.apache.org/zookeeper/). Like ther rest of the Hadoop project, ZooKeeper requires JDK1.6 and above and thus for the same reasons as the HDFS Component (http://github.com/dgreco/camel-hdfs) this must also live outside of Camel's mainline. That having been said, if you're targetting 1.6 it is ready for use and your feedback is appreciated.
+
+Building
+---------
+This targets the pending 3.3.0 release of Zookeeper. Until such a time as 3.3.0 is released and a jar is pushed to a Maven repository builds will need to add a jar manually.
+A fork of the current Zookeeper head has been made for this purpose and can be obtained via
+
+git clone git@github.com:sgargan/zookeeper.git
+cd zookeeper
+
+Use the tag 'camel-zookeeper' to build a jar known to work with the component. 
+
+> git co camel-zookeeper
+
+Build a zookeeper jar with ant
+
+Checkout the latest version of this component
+
+> git clone git@github.com:sgargan/camel-zookeeper.git
+> cd camel-zookeeper
+
+Run maven. 
+
+> mvn clean install 
+
+The build will fail due to the missing zookeeper jar but will output the following lines
+
+mvn install:install-file -DgroupId=org.apache.zookeeper -DartifactId=zookeeper -Dversion=3.3.0 -Dpackaging=jar -Dfile=/path/to/file
+mvn deploy:deploy-file -DgroupId=org.apache.zookeeper -DartifactId=zookeeper -Dversion=3.3.0 -Dpackaging=jar -Dfile=/path/to/file -Durl=[url] -DrepositoryId=[id]
+
+use these to install or deploy the zookeeper jar to your local or network repo e.g.
+
+> cd ../zookeeper
+> mvn install:install-file -DgroupId=org.apache.zookeeper -DartifactId=zookeeper -Dversion=3.3.0 -Dpackaging=jar -Dfile=build/zookeeper-3.3.0.jar
+
+Rerun your maven build and it should now succeed.
+
+Usage
+------
+
+Documentation is in progress. In the interim, consult unit tests for usage. 
+
+
+
+
