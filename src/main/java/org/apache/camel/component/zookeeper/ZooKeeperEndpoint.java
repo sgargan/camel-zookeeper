@@ -31,7 +31,7 @@ import org.springframework.jmx.export.annotation.ManagedResource;
  * <code>ZooKeeperEndpoint</code>
  */
 @ManagedResource("ZooKeeper Endpoint")
-public class ZooKeeperEndpoint extends DefaultEndpoint implements ManagementAware<ZooKeeperEndpoint> {
+public class ZooKeeperEndpoint extends DefaultEndpoint {
     private ZooKeeperConfiguration configuration;
     private ZooKeeperConnectionManager connectionManager;
 

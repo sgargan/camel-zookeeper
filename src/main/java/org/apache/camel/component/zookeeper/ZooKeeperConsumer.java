@@ -70,7 +70,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         }
 
         initializeConsumer();
-        executor = ExecutorServiceHelper.newFixedThreadPool(1, format("'%s' Operations executor", configuration.getPath()), true);
+        executor = ExecutorServiceHelper.newFixedThreadPool(1, "Camel-Zookeeper Ops executor '${name}'", configuration.getPath(), true);
         OperationsExecutor OpsService = new OperationsExecutor();
         executor.execute(OpsService);
     }

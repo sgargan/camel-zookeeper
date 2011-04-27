@@ -25,15 +25,13 @@ import org.junit.Test;
 
 public class ZookeeperRoutePolicyTest extends ZooKeeperTestSupport {
 
-    protected RouteBuilder createRouteBuilder() throws Exception {
+    @Test
+    public void routeCanBeControlledByPolicy() throws Exception {
         // set up the parent used to control the election
         client.createPersistent("/someapp", "App node to contain policy election nodes...");
         client.createPersistent("/someapp/somepolicy", "Policy node used by route policy to control routes...");
-        return new ZooKeeperPolicyEnforcedRoute();
-    }
-
-    @Test
-    public void routeCanBeControlledByPolicy() throws Exception {
+        context.addRoutes(new ZooKeeperPolicyEnforcedRoute());
+        
         MockEndpoint mock = getMockEndpoint("mock:controlled");
         mock.setExpectedMessageCount(1);
         sendBody("direct:policy-controlled", "This is a test");
@@ -44,7 +42,6 @@ public class ZookeeperRoutePolicyTest extends ZooKeeperTestSupport {
     public static class ZooKeeperPolicyEnforcedRoute extends RouteBuilder {
         public void configure() throws Exception {
             ZooKeeperRoutePolicy policy = new ZooKeeperRoutePolicy("zoo:localhost:39913/someapp/somepolicy", 1);
-            policy.setCamelContext(getContext());
             from("direct:policy-controlled").routePolicy(policy).to("mock:controlled");
         }
     };

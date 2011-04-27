@@ -62,7 +62,7 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
         public ZookeeperPolicyEnforcedContext(String name) throws Exception {
             controlledContext = new DefaultCamelContext();
             routename = name;
-            template = new DefaultProducerTemplate(controlledContext);
+            template = controlledContext.createProducerTemplate();
             mock = controlledContext.getEndpoint("mock:controlled", MockEndpoint.class);
             controlledContext.addRoutes(new FailoverRoute(name));
             controlledContext.start();
@@ -107,7 +107,6 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
 
         public void configure() throws Exception {
             ZooKeeperRoutePolicy policy = new ZooKeeperRoutePolicy("zoo:localhost:39913/someapp/somepolicy", 1);
-            policy.setCamelContext(getContext());
             from("vm:" + routename).routePolicy(policy).id(routename).to("mock:controlled");
         }
     };

@@ -29,19 +29,19 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Processor;
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.zookeeper.SequenceComparator;
 import org.apache.camel.component.zookeeper.ZooKeeperEndpoint;
 import org.apache.camel.component.zookeeper.ZooKeeperMessage;
-import org.apache.camel.impl.DefaultProducerTemplate;
+import org.apache.camel.impl.JavaUuidGenerator;
 import org.apache.camel.impl.RoutePolicySupport;
+import org.apache.camel.spi.UuidGenerator;
 import org.apache.camel.util.ExchangeHelper;
-import org.apache.camel.util.UuidGenerator;
 import org.apache.zookeeper.CreateMode;
 
 /**
@@ -71,7 +71,7 @@ import org.apache.zookeeper.CreateMode;
  *
  * @author sgargan
  */
-public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelContextAware {
+public class ZooKeeperRoutePolicy extends RoutePolicySupport{
 
     private String uri;
 
@@ -89,10 +89,14 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
 
     private CamelContext camelContext;
 
-    private DefaultProducerTemplate template;
+    private ProducerTemplate template;
 
     private boolean shouldStopConsumer = true;
 
+    private UuidGenerator uuidGenerator = new JavaUuidGenerator();
+
+    private boolean isCandidateCreated;
+    
     public ZooKeeperRoutePolicy(String uri, int enabledCount) throws Exception {
         this.uri = uri;
         this.enabledCount = enabledCount;
@@ -102,12 +106,14 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
     private void createCandidateName() throws Exception {
         /** UUID would be enough, also using hostname for human readability */
         StringBuilder b = new StringBuilder(InetAddress.getLocalHost().getCanonicalHostName());
-        b.append("-").append(UuidGenerator.get().generateUuid());
+        b.append("-").append(uuidGenerator.generateUuid());
         this.candidateName = b.toString();
     }
 
     @Override
     public void onExchangeBegin(Route route, Exchange exchange) {
+        testAndCreateCandidateNode(route);
+        
         awaitElectionResults();
         if (!shouldProcessExchanges.get()) {
             if (shouldStopConsumer) {
@@ -122,6 +128,20 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
                 startConsumer(route);
             }
         }
+    }
+
+    private void testAndCreateCandidateNode(Route route) {
+        try {
+            lock.lock();
+            if(!isCandidateCreated) {
+                createCandidateNode(route.getRouteContext().getCamelContext());
+                isCandidateCreated = true;
+            }
+        } catch (Exception e) {
+            handleException(e);
+        } finally {
+            lock.unlock();
+        }        
     }
 
     private void awaitElectionResults() {
@@ -190,17 +210,8 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport implements CamelCon
         this.shouldStopConsumer = shouldStopConsumer;
     }
 
-    public CamelContext getCamelContext() {
-        return camelContext;
-    }
-
-    public void setCamelContext(CamelContext camelContext) {
-        this.camelContext = camelContext;
-        this.template = new DefaultProducerTemplate(camelContext);
-        createCandidateNode(camelContext);
-    }
-
     private ZooKeeperEndpoint createCandidateNode(CamelContext camelContext) {
+        this.template = camelContext.createProducerTemplate();
         if (log.isInfoEnabled()) {
             log.info(format("Initializing ZookeeperRoutePolicy with uri '%s'", uri));
         }
