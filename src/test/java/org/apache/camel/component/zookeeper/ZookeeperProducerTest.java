@@ -129,7 +129,6 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testZookeeperMessage() throws Exception {
 
         MockEndpoint mock = getMockEndpoint("mock:consumed-from-node");

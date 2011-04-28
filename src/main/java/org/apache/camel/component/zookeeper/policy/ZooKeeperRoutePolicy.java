@@ -278,7 +278,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
              * request the candidate list when its status changes. This will
              * require enhancing the consumer to allow custom operation lists.
              */
-            from(zep).sortBody(comparator).process(new Processor() {
+            from(zep).sort(body(), comparator).process(new Processor() {
 
                 @SuppressWarnings("unchecked")
                 public void process(Exchange e) throws Exception {

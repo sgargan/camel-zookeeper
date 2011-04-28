@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Deque;
@@ -36,9 +37,9 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.NIOServerCnxn;
@@ -99,6 +100,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
 
         public TestZookeeperServer(int clientPort, boolean clearServerData) throws Exception {
 
+        
             if (clearServerData) {
                 File working = new File("./target/zookeeper");
                 deleteDir(working);
@@ -112,7 +114,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
             FileTxnSnapLog ftxn = new FileTxnSnapLog(dataDir, snapDir);
             zkServer.setTxnLogFactory(ftxn);
             zkServer.setTickTime(1000);
-            connectionFactory = new NIOServerCnxn.Factory(clientPort, 0);
+            connectionFactory = new NIOServerCnxn.Factory(new InetSocketAddress("localhost", clientPort), 0);
             connectionFactory.startup(zkServer);
         }
 
