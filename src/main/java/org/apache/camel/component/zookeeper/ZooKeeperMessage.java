@@ -16,6 +16,7 @@
  */
 package org.apache.camel.component.zookeeper;
 
+import org.apache.camel.Message;
 import org.apache.camel.impl.DefaultMessage;
 import org.apache.zookeeper.data.Stat;
 
@@ -24,7 +25,7 @@ import org.apache.zookeeper.data.Stat;
  * representing interactions with a ZooKeeper service. It contains a number of
  * optional Header Constants that are used by the Producer and consumer
  * mechanisms to finely control these interactions.
- *
+ * 
  * @version $
  */
 public class ZooKeeperMessage extends DefaultMessage {
@@ -41,23 +42,25 @@ public class ZooKeeperMessage extends DefaultMessage {
 
     public static final String ZOOKEEPER_STATISTICS = "CamelZookeeperStatistics";
 
-    private String path;
-
-    private Stat statistics;
-
+   
     public ZooKeeperMessage(String path, Stat statistics) {
-        this.path = path;
-        this.statistics = statistics;
         this.setHeader(ZOOKEEPER_NODE, path);
         this.setHeader(ZOOKEEPER_STATISTICS, statistics);
     }
 
-
-    public Stat getStatistics() {
-        return statistics;
+    public static Stat getStatistics(Message message) {
+        Stat stats = null;
+        if(message != null) {
+            stats = message.getHeader(ZOOKEEPER_STATISTICS, Stat.class);
+        }
+        return stats;
     }
 
-    public String getPath() {
+    public static String getPath(Message message) {
+        String path = null;
+        if(message != null) {
+            path = message.getHeader(ZOOKEEPER_NODE, String.class);
+        }
         return path;
     }
 

@@ -45,7 +45,7 @@ import org.apache.zookeeper.data.Stat;
  *
  * @version $
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public class ZookeeperProducer extends DefaultProducer {
 
     private ZooKeeperConfiguration configuration;

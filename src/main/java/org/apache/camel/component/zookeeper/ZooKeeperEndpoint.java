@@ -22,15 +22,14 @@ import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
 import org.apache.camel.impl.DefaultEndpoint;
-import org.apache.camel.spi.ManagementAware;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedResource;
+import org.apache.camel.management.ManagedAttribute;
+import org.apache.camel.management.ManagedOperation;
+import org.apache.camel.management.ManagedResource;
 
 /**
  * <code>ZooKeeperEndpoint</code>
  */
-@ManagedResource("ZooKeeper Endpoint")
+@ManagedResource(description = "ZooKeeper Endpoint")
 public class ZooKeeperEndpoint extends DefaultEndpoint {
     private ZooKeeperConfiguration configuration;
     private ZooKeeperConnectionManager connectionManager;
@@ -65,7 +64,7 @@ public class ZooKeeperEndpoint extends DefaultEndpoint {
         return connectionManager;
     }
 
-    @ManagedAttribute
+    @ManagedAttribute(description = "Session Password")
     public byte[] getSessionPassword() {
         return getConfiguration().getSessionPassword();
     }

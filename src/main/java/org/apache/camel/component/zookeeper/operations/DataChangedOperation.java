@@ -26,7 +26,7 @@ import org.apache.zookeeper.data.Stat;
  * for an watched event indicating that the data contained in a given
  * node has changed before optionally retrieving the changed data.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public class DataChangedOperation extends FutureEventDrivenOperation<byte[]> {
 
     private boolean getChangedData;

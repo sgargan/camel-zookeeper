@@ -59,7 +59,7 @@ public class SetDataOperation extends ZooKeeperOperation<byte[]> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     public ZooKeeperOperation createCopy() throws Exception {
         SetDataOperation copy = (SetDataOperation) super.createCopy();
         copy.version = -1; // set the version to -1 for 'any version'

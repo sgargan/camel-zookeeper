@@ -31,7 +31,7 @@ import org.apache.zookeeper.ZooKeeper;
  * ZooKeeper API instructions and callbacks into callable and composable operation
  * objects.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public abstract class ZooKeeperOperation<ResultType> {
 
     protected final transient Log log = LogFactory.getLog(getClass());

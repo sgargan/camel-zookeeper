@@ -26,11 +26,8 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.impl.DefaultComponent;
 
 /**
- * Represents the component that manages {@link ZooKeeperEndpoint}s.
- *
- * @version $
+ * Component that creates {@link ZooKeeperEndpoint}s for interacting with a ZooKeeper cluster.
  */
-@SuppressWarnings("unchecked")
 public class ZooKeeperComponent extends DefaultComponent {
 
     private ZooKeeperConfiguration configuration;
@@ -46,6 +43,7 @@ public class ZooKeeperComponent extends DefaultComponent {
         this.configuration = configuration;
     }
 
+    @SuppressWarnings("all")
     protected Endpoint createEndpoint(String uri, String remaining, Map parameters) throws Exception {
         if (getCamelContext() == null) {
             throw new CamelException("No Camel context has been provided to this zookeeper component");

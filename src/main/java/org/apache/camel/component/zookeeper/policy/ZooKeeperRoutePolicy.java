@@ -87,8 +87,6 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
 
     private AtomicBoolean shouldProcessExchanges = new AtomicBoolean();
 
-    private CamelContext camelContext;
-
     private ProducerTemplate template;
 
     private boolean shouldStopConsumer = true;

@@ -33,14 +33,13 @@ import org.apache.camel.component.zookeeper.operations.GetDataOperation;
 import org.apache.camel.component.zookeeper.operations.OperationResult;
 import org.apache.camel.component.zookeeper.operations.ZooKeeperOperation;
 import org.apache.camel.impl.DefaultConsumer;
-import org.apache.camel.util.concurrent.ExecutorServiceHelper;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
  * <code>ZooKeeperConsumer</code> uses various {@link ZooKeeperOperation} to
  * interact and consume data from a ZooKeeper cluster.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public class ZooKeeperConsumer extends DefaultConsumer {
 
     private ZooKeeperConnectionManager connectionManager;
@@ -70,7 +69,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
         }
 
         initializeConsumer();
-        executor = ExecutorServiceHelper.newFixedThreadPool(1, "Camel-Zookeeper Ops executor '${name}'", configuration.getPath(), true);
+        executor = getEndpoint().getCamelContext().getExecutorServiceManager().newFixedThreadPool(configuration.getPath(), "Camel-Zookeeper Ops executor", 1);
         OperationsExecutor OpsService = new OperationsExecutor();
         executor.execute(OpsService);
     }

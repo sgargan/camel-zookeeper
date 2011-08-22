@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
  * existence, data or children, falling back to a corresponding watch operation
  * if the test operation fails.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public class AnyOfOperations extends ZooKeeperOperation {
 
     private ZooKeeperOperation[] keeperOperations;
