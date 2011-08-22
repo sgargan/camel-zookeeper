@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.camel.Exchange;
+import org.apache.camel.Message;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.apache.camel.util.FileUtil;
@@ -47,6 +48,7 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+
 
 public class ZooKeeperTestSupport extends CamelTestSupport {
 
@@ -66,7 +68,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         server = new TestZookeeperServer(getServerPort(), clearServerData());
         waitForServerUp("localhost:" + getServerPort(), 1000);
         client = new TestZookeeperClient(getServerPort(), getTestClientSessionTimeout());
-        log.info("Started Zookeeper Test Infrastructure");
+        log.info("Started Zookeeper Test Infrastructure on port "+getServerPort());
     }
 
     public ZooKeeper getConnection() {
@@ -315,8 +317,8 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         int lastVersion = -1;
         List<Exchange> received = mock.getReceivedExchanges();
         for (int x = 0; x < received.size(); x++) {
-            ZooKeeperMessage zkm = (ZooKeeperMessage)mock.getReceivedExchanges().get(x).getIn();
-            int version = zkm.getStatistics().getVersion();
+            Message zkm = mock.getReceivedExchanges().get(x).getIn();
+            int version = ZooKeeperMessage.getStatistics(zkm).getVersion();
             assertTrue("Version did not increase", lastVersion < version);
             lastVersion = version;
         }

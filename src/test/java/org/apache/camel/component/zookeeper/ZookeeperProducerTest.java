@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.ExchangePattern;
+import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.zookeeper.operations.GetChildrenOperation;
@@ -139,8 +140,8 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         mock.await();
         mock.assertIsSatisfied();
 
-        ZooKeeperMessage zke = (ZooKeeperMessage)mock.getReceivedExchanges().get(0).getIn();
-        assertEquals("/node", zke.getPath());
-        assertNotNull(zke.getStatistics());
+        Message received = mock.getReceivedExchanges().get(0).getIn();
+        assertEquals("/node", ZooKeeperMessage.getPath(received));
+        assertNotNull(ZooKeeperMessage.getStatistics(received));
     }
 }
