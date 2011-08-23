@@ -16,6 +16,9 @@
  */
 package org.apache.camel.component.zookeeper;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.camel.Message;
 import org.apache.camel.impl.DefaultMessage;
 import org.apache.zookeeper.data.Stat;
@@ -30,7 +33,7 @@ import org.apache.zookeeper.data.Stat;
  */
 public class ZooKeeperMessage extends DefaultMessage {
 
-    public static final String ZOOKEEPER_NODE = "CamelZooKeeperPath";
+    public static final String ZOOKEEPER_NODE = "CamelZooKeeperNode";
 
     public static final String ZOOKEEPER_NODE_VERSION = "CamelZooKeeperVersion";
 
@@ -42,8 +45,14 @@ public class ZooKeeperMessage extends DefaultMessage {
 
     public static final String ZOOKEEPER_STATISTICS = "CamelZookeeperStatistics";
 
-    public ZooKeeperMessage(String path, Stat statistics) {
-        this.setHeader(ZOOKEEPER_NODE, path);
+    @SuppressWarnings("unchecked")
+    public ZooKeeperMessage(String node, Stat statistics) {
+        this(node, statistics, Collections.EMPTY_MAP);
+    }
+
+    public ZooKeeperMessage(String node, Stat statistics, Map<String, Object> headers) {
+        setHeaders(headers);
+        this.setHeader(ZOOKEEPER_NODE, node);
         this.setHeader(ZOOKEEPER_STATISTICS, statistics);
     }
 
@@ -62,5 +71,7 @@ public class ZooKeeperMessage extends DefaultMessage {
         }
         return path;
     }
+    
+    
 
 }

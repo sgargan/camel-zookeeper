@@ -63,13 +63,10 @@ import org.apache.zookeeper.CreateMode;
  * for this to indicate the application e.g. /someapplication/someroute/ note
  * that these nodes should exist before using the policy.
  * <p>
- * In order for this policy to work correctly it needs a configured camel
- * context to set up the routes on which it relies. It is camel context aware,
- * and so will be Check @link{ http://hadoop.apache
+ * See @link{ http://hadoop.apache
  * .org/zookeeper/docs/current/recipes.html#sc_leaderElection} for more on how
  * Leader election is achieved with ZooKeeper.
  * 
- * @author sgargan
  */
 public class ZooKeeperRoutePolicy extends RoutePolicySupport {
 
@@ -268,8 +265,9 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport {
              * TODO: this is cheap cheerful but suboptimal; it suffers from the
              * 'herd effect' that on any change to the candidates list every
              * policy instance will ask for the entire candidate list again.
-             * This is fine for small numbers of nodes but would get very noisy
-             * if large numbers were involved.
+             * This is fine for small numbers of nodes (for scenarios
+             * like Master-Slave it is perfect) but could get noisy if
+             * large numbers of nodes were involved.
              * <p>
              * Better would be to find the position of this node in the list and
              * watch the node in the position ahead node ahead of this and only

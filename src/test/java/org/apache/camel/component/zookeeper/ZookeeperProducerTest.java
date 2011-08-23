@@ -27,6 +27,7 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.component.zookeeper.operations.GetChildrenOperation;
 import org.apache.camel.util.ExchangeHelper;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.data.Stat;
 
 import org.junit.Test;
 
@@ -56,6 +57,10 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
             public void configure() throws Exception {
                 from("direct:node-from-header").to("zoo://localhost:39913/notset?create=true");
                 from("zoo://localhost:39913/set?create=true").to("mock:consumed-from-set-node");
+            }
+        }, new RouteBuilder() {
+            public void configure() throws Exception {
+                from("direct:create-mode").to("zoo://localhost:39913/persistent?create=true&createMode=PERSISTENT").to("mock:create-mode");
             }
         }};
     }
@@ -114,6 +119,21 @@ public class ZookeeperProducerTest extends ZooKeeperTestSupport {
         }
         GetChildrenOperation listing = new GetChildrenOperation(getConnection(), "/modes-test");
         assertEquals(CreateMode.values().length, listing.get().getResult().size());
+    }
+    
+    @Test
+    public void createWithOtherCreateMode() throws Exception {
+        MockEndpoint mock = getMockEndpoint("mock:create-mode");
+        mock.expectedMessageCount(1);
+        
+        Exchange e = createExchangeWithBody(testPayload);
+        e.setPattern(ExchangePattern.InOut);
+        
+        template.send("direct:create-mode", e);
+        mock.await(5, TimeUnit.SECONDS);
+        
+        Stat s = mock.getReceivedExchanges().get(0).getIn().getHeader(ZooKeeperMessage.ZOOKEEPER_STATISTICS, Stat.class);
+        assertEquals(s.getEphemeralOwner(), 0);
     }
 
     @Test

@@ -43,20 +43,31 @@ public final class ZooKeeperUtils {
      * @return the parsed {@link CreateMode} or null if the header was null or
      *         not a valid mode flag.
      */
-    public static CreateMode getCreateMode(Message message) {
+    public static CreateMode getCreateMode(Message message, CreateMode defaultMode) {
         CreateMode mode = null;
 
-        mode = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, CreateMode.class);
+        try {
+            mode = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, CreateMode.class);
+        } catch (Exception e) {
+        }
+        
         if (mode == null) {
-            Integer modeHeader = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, Integer.class);
-            if (modeHeader != null) {
-                try {
-                    mode = CreateMode.fromFlag(modeHeader);
-                } catch (Exception e) {
-                }
+            String modeHeader = message.getHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE, String.class);
+            mode = getCreateModeFromString(modeHeader, defaultMode);
+        }
+        return mode == null ? defaultMode : mode;
+    }
+
+    public static CreateMode getCreateModeFromString(String modeHeader, CreateMode defaultMode) {
+        
+        CreateMode mode = null;
+        if (modeHeader != null) {
+            try {
+                mode = CreateMode.valueOf(modeHeader);
+            } catch (Exception e) {
             }
         }
-        return mode;
+        return mode == null ? defaultMode : mode;
     }
 
     /**

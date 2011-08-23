@@ -43,6 +43,7 @@ public class ZooKeeperConfiguration implements Cloneable {
     private boolean repeat;
     private boolean listChildren;
     private boolean shouldCreate;
+    private String createMode;
 
     public void addZookeeperServer(String server) {
         if (servers == null) {
@@ -151,5 +152,15 @@ public class ZooKeeperConfiguration implements Cloneable {
     public boolean shouldCreate() {
         return shouldCreate;
     }
+
+    public String getCreateMode() {
+        return createMode;
+    }
+
+    public void setCreateMode(String createMode) {
+        this.createMode = createMode;
+    }
+    
+    
 
 }

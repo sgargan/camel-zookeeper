@@ -35,6 +35,7 @@ import org.apache.zookeeper.data.Stat;
 
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getAclListFromMessage;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getCreateMode;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getCreateModeFromString;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getNodeFromMessage;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getPayloadFromExchange;
 import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getVersionFromMessage;
@@ -89,13 +90,13 @@ public class ZookeeperProducer extends DefaultProducer {
     }
 
     private void updateExchangeWithResult(ProductionContext context, OperationResult result) {
-        ZooKeeperMessage out = new ZooKeeperMessage(context.node, result.getStatistics());
+        ZooKeeperMessage out = new ZooKeeperMessage(context.node, result.getStatistics(), context.in.getHeaders());
         if (result.isOk()) {
             out.setBody(result.getResult());
         } else {
             context.exchange.setException(result.getException());
         }
-        out.setHeaders(context.in.getHeaders());
+        
         context.exchange.setOut(out);
     }
 
@@ -149,7 +150,16 @@ public class ZookeeperProducer extends DefaultProducer {
     private OperationResult<String> createNode(ProductionContext ctx) throws Exception {
         CreateOperation create = new CreateOperation(ctx.connection, ctx.node);
         create.setPermissions(getAclListFromMessage(ctx.exchange.getIn()));
-        CreateMode mode = getCreateMode(ctx.exchange.getIn());
+        
+        CreateMode mode = null;
+        String modeString = configuration.getCreateMode();
+        if (modeString != null) {
+            try {
+                mode = getCreateModeFromString(modeString, CreateMode.EPHEMERAL);
+            } catch (Exception e) { }
+        } else {
+            mode = getCreateMode(ctx.exchange.getIn(), CreateMode.EPHEMERAL);
+        }
         create.setCreateMode(mode == null ? CreateMode.EPHEMERAL : mode);
         create.setData(ctx.payload);
         return create.get();
