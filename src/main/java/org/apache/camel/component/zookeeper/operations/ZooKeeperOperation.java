@@ -34,19 +34,21 @@ import org.apache.zookeeper.ZooKeeper;
 @SuppressWarnings("rawtypes")
 public abstract class ZooKeeperOperation<ResultType> {
 
-    protected final transient Log log = LogFactory.getLog(getClass());
+    protected static final transient Log LOG = LogFactory.getLog(ZooKeeperOperation.class);
+
+    protected static final Class[] CONSTRUCTOR_ARGS = {ZooKeeper.class, String.class};
 
     protected String node;
 
     protected ZooKeeper connection;
 
+    protected Set<Thread> waitingThreads = new CopyOnWriteArraySet<Thread>();
+    
+    protected OperationResult<ResultType> result;
+    
     private boolean producesExchange;
 
-    protected Set<Thread> waitingThreads = new CopyOnWriteArraySet<Thread>();
-
     private boolean cancelled;
-
-    protected OperationResult<ResultType> result;
 
     public ZooKeeperOperation(ZooKeeper connection, String node) {
         this(connection, node, true);
@@ -102,10 +104,9 @@ public abstract class ZooKeeperOperation<ResultType> {
         return producesExchange;
     }
 
-    protected final static Class[] constructorArgs = {ZooKeeper.class, String.class};
 
     // TODO: slightly different to a clone as it uses the constructor
     public ZooKeeperOperation createCopy() throws Exception {
-        return getClass().getConstructor(constructorArgs).newInstance(new Object[] {connection, node});
+        return getClass().getConstructor(CONSTRUCTOR_ARGS).newInstance(new Object[] {connection, node});
     }
 }

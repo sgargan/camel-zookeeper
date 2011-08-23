@@ -20,8 +20,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * <code>ExistsOperation</code> is a basic ZooKeeper operation used to test
- * the existence of a given node.
+ * <code>ExistsOperation</code> is a basic ZooKeeper operation used to test the
+ * existence of a given node.
  */
 public class ExistsOperation extends ZooKeeperOperation<String> {
 
@@ -41,9 +41,8 @@ public class ExistsOperation extends ZooKeeperOperation<String> {
         try {
             Stat statistics = connection.exists(node, true);
             boolean ok = isOk(statistics);
-            if(log.isTraceEnabled())
-            {
-                log.trace(ok ? "node exists" : "node does not exist");
+            if (LOG.isTraceEnabled()) {
+                LOG.trace(ok ? "node exists" : "node does not exist");
             }
             return new OperationResult<String>(node, statistics, ok);
         } catch (Exception e) {

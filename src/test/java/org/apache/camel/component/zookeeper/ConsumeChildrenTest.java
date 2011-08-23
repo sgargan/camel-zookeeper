@@ -36,8 +36,7 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
     protected RouteBuilder[] createRouteBuilders() throws Exception {
         return new RouteBuilder[] {new RouteBuilder() {
             public void configure() throws Exception {
-                from("zoo://localhost:39913/grimm?repeat=true&listChildren=true")
-                    .sort(body(), new NaturalSortComparator(Order.Descending)).to("mock:zookeeper-data");
+                from("zoo://localhost:39913/grimm?repeat=true&listChildren=true").sort(body(), new NaturalSortComparator(Order.Descending)).to("mock:zookeeper-data");
             }
         }};
     }
@@ -76,7 +75,7 @@ public class ConsumeChildrenTest extends ZooKeeperTestSupport {
         List<Exchange> received = mock.getReceivedExchanges();
         for (int x = 0; x < received.size(); x++) {
             Message zkm = mock.getReceivedExchanges().get(x).getIn();
-            int childCount = ((Stat) zkm.getHeader(ZooKeeperMessage.ZOOKEEPER_STATISTICS)).getNumChildren();
+            int childCount = ((Stat)zkm.getHeader(ZooKeeperMessage.ZOOKEEPER_STATISTICS)).getNumChildren();
             assertNotSame("Num of children did not change", lastChildCount, childCount);
             lastChildCount = childCount;
         }

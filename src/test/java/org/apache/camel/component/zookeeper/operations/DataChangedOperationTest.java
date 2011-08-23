@@ -20,7 +20,7 @@ import org.apache.camel.component.zookeeper.ZooKeeperTestSupport;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 
-public class DataChangedOperationTest extends ZooKeeperTestSupport{
+public class DataChangedOperationTest extends ZooKeeperTestSupport {
 
     @Test
     public void getsDataWhenNodeChanges() throws Exception {
@@ -33,7 +33,6 @@ public class DataChangedOperationTest extends ZooKeeperTestSupport{
         client.setData("/datachanged", "Really trust us", -1);
         assertArrayEquals("Really trust us".getBytes(), future.get().getResult());
     }
-
 
     @Test
     public void getsNotifiedWhenNodeIsDeleted() throws Exception {

@@ -20,7 +20,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.junit.Test;
 
-public class ZookeeperConnectionManagerTest extends ZooKeeperTestSupport{
+public class ZookeeperConnectionManagerTest extends ZooKeeperTestSupport {
 
     @Test
     public void shouldWaitForConnection() {

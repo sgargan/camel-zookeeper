@@ -16,8 +16,6 @@
  */
 package org.apache.camel.component.zookeeper.policy;
 
-import static java.lang.String.format;
-
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +25,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static java.lang.String.format;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
@@ -68,10 +68,10 @@ import org.apache.zookeeper.CreateMode;
  * and so will be Check @link{ http://hadoop.apache
  * .org/zookeeper/docs/current/recipes.html#sc_leaderElection} for more on how
  * Leader election is achieved with ZooKeeper.
- *
+ * 
  * @author sgargan
  */
-public class ZooKeeperRoutePolicy extends RoutePolicySupport{
+public class ZooKeeperRoutePolicy extends RoutePolicySupport {
 
     private String uri;
 
@@ -94,7 +94,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
     private UuidGenerator uuidGenerator = new JavaUuidGenerator();
 
     private boolean isCandidateCreated;
-    
+
     public ZooKeeperRoutePolicy(String uri, int enabledCount) throws Exception {
         this.uri = uri;
         this.enabledCount = enabledCount;
@@ -111,7 +111,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
     @Override
     public void onExchangeBegin(Route route, Exchange exchange) {
         testAndCreateCandidateNode(route);
-        
+
         awaitElectionResults();
         if (!shouldProcessExchanges.get()) {
             if (shouldStopConsumer) {
@@ -131,7 +131,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
     private void testAndCreateCandidateNode(Route route) {
         try {
             lock.lock();
-            if(!isCandidateCreated) {
+            if (!isCandidateCreated) {
                 createCandidateNode(route.getRouteContext().getCamelContext());
                 isCandidateCreated = true;
             }
@@ -139,7 +139,7 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
             handleException(e);
         } finally {
             lock.unlock();
-        }        
+        }
     }
 
     private void awaitElectionResults() {
@@ -251,9 +251,9 @@ public class ZooKeeperRoutePolicy extends RoutePolicySupport{
 
     private class ElectoralMonitorRoute extends RouteBuilder {
 
+        private SequenceComparator comparator = new SequenceComparator();
+        
         private ZooKeeperEndpoint zep;
-
-        final SequenceComparator comparator = new SequenceComparator();
 
         public ElectoralMonitorRoute(ZooKeeperEndpoint zep) {
             this.zep = zep;

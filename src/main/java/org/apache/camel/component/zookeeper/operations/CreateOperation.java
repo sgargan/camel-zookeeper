@@ -16,13 +16,13 @@
  */
 package org.apache.camel.component.zookeeper.operations;
 
-import static java.lang.String.format;
-
 import java.util.List;
 
+import static java.lang.String.format;
+
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
@@ -32,15 +32,15 @@ import org.apache.zookeeper.data.Stat;
  */
 public class CreateOperation extends ZooKeeperOperation<String> {
 
-    private static final List<ACL> DefaultPermissions = Ids.OPEN_ACL_UNSAFE;
+    private static final List<ACL> DEFAULT_PERMISSIONS = Ids.OPEN_ACL_UNSAFE;
 
-    private static final CreateMode DefaultMode = CreateMode.EPHEMERAL;
+    private static final CreateMode DEFAULT_MODE = CreateMode.EPHEMERAL;
 
     private byte[] data;
 
-    private List<ACL> permissions = DefaultPermissions;
+    private List<ACL> permissions = DEFAULT_PERMISSIONS;
 
-    private CreateMode createMode = DefaultMode;
+    private CreateMode createMode = DEFAULT_MODE;
 
     public CreateOperation(ZooKeeper connection, String node) {
         super(connection, node);
@@ -50,8 +50,8 @@ public class CreateOperation extends ZooKeeperOperation<String> {
     public OperationResult<String> getResult() {
         try {
             String created = connection.create(node, data, permissions, createMode);
-            if (log.isDebugEnabled()) {
-                log.debug(format("Created node '%s' using mode '%s'", created, createMode));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(format("Created node '%s' using mode '%s'", created, createMode));
             }
             // for consistency with other operations return an empty stats set.
             return new OperationResult<String>(created, new Stat());

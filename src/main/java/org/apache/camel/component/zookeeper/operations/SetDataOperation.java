@@ -40,12 +40,12 @@ public class SetDataOperation extends ZooKeeperOperation<byte[]> {
     public OperationResult<byte[]> getResult() {
         try {
             Stat statistics = connection.setData(node, data, version);
-            if (log.isDebugEnabled()) {
-                if (log.isTraceEnabled()) {
-                    log.trace(format("Set data of node '%s'  with '%d' bytes of data, retrieved statistics '%s' ",
+            if (LOG.isDebugEnabled()) {
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace(format("Set data of node '%s'  with '%d' bytes of data, retrieved statistics '%s' ",
                                      node, data != null ? data.length : 0, statistics));
                 } else {
-                    log.debug(format("Set data of node '%s' with '%d' bytes of data", node, data != null ? data.length : 0));
+                    LOG.debug(format("Set data of node '%s' with '%d' bytes of data", node, data != null ? data.length : 0));
                 }
             }
             return new OperationResult<byte[]>(data, statistics);

@@ -34,8 +34,7 @@ public class SetDataOperationTest extends ZooKeeperTestSupport {
 
     @Test
     public void setData() throws Exception {
-
-        client.create("/one", TestPayload);
+        client.create("/one", testPayload);
         SetDataOperation operation = new SetDataOperation(connection, "/one", "Updated".getBytes());
         OperationResult<byte[]> result = operation.get();
         verifyNodeContainsData("/one", "Updated".getBytes());
@@ -45,10 +44,10 @@ public class SetDataOperationTest extends ZooKeeperTestSupport {
     @Test
     public void setSpecificVersionOfData() throws Exception {
 
-        client.create("/two", TestPayload);
+        client.create("/two", testPayload);
         for (int x = 0; x < 10; x++) {
             byte[] payload = ("Updated_" + x).getBytes();
-            updateDataOnNode("/two", payload, x, x+1);
+            updateDataOnNode("/two", payload, x, x + 1);
             verifyNodeContainsData("/two", payload);
         }
     }
@@ -56,7 +55,7 @@ public class SetDataOperationTest extends ZooKeeperTestSupport {
     @Test
     public void setWithNull() throws Exception {
 
-        client.create("/three", TestPayload);
+        client.create("/three", testPayload);
         updateDataOnNode("/three", null, -1, 1);
 
     }

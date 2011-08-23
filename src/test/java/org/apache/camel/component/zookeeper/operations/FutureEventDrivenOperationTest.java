@@ -16,12 +16,13 @@
  */
 package org.apache.camel.component.zookeeper.operations;
 
-import static org.junit.Assert.assertEquals;
-
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
+
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
 
 public class FutureEventDrivenOperationTest {
     private String data = "Event Received";

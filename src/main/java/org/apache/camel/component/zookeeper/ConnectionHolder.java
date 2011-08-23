@@ -16,9 +16,9 @@
  */
 package org.apache.camel.component.zookeeper;
 
-import static java.lang.String.format;
-
 import java.util.concurrent.CountDownLatch;
+
+import static java.lang.String.format;
 
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.util.ObjectHelper;
@@ -26,8 +26,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
  * <code>ConnectionHolder</code> watches for Connection based events from
@@ -36,7 +36,7 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
  */
 public class ConnectionHolder implements Watcher {
 
-    private static final transient Log log = LogFactory.getLog(ConnectionHolder.class);
+    private static final transient Log LOG = LogFactory.getLog(ConnectionHolder.class);
 
     private CountDownLatch connectionLatch = new CountDownLatch(1);
 
@@ -49,8 +49,7 @@ public class ConnectionHolder implements Watcher {
     }
 
     public ZooKeeper getZooKeeper() {
-        if(zookeeper != null)
-        {
+        if (zookeeper != null) {
             return zookeeper;
         }
         if (configuration.getConnectString() == null) {
@@ -74,8 +73,8 @@ public class ConnectionHolder implements Watcher {
     }
 
     public void awaitConnection() {
-        if (log.isDebugEnabled()) {
-            log.debug(format("Awaiting Connection event from Zookeeper cluster %s", configuration.getConnectString()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(format("Awaiting Connection event from Zookeeper cluster %s", configuration.getConnectString()));
         }
         try {
             connectionLatch.await();
@@ -94,11 +93,11 @@ public class ConnectionHolder implements Watcher {
     public void closeConnection() {
         try {
             zookeeper.close();
-            if (log.isDebugEnabled()) {
-                log.debug(format("Shutting down connection to Zookeeper cluster %s", configuration.getConnectString()));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(format("Shutting down connection to Zookeeper cluster %s", configuration.getConnectString()));
             }
         } catch (InterruptedException e) {
-            log.error("Error closing zookeeper connection.", e);
+            LOG.error("Error closing zookeeper connection.", e);
         }
     }
 }

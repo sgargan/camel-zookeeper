@@ -66,7 +66,8 @@ public class NaturalSortComparator implements Comparator<CharSequence> {
         }
 
         int compare = 0;
-        int fx = 0, sx = 0;
+        int fx = 0;
+        int sx = 0;
         while (fx < first.length() && sx < second.length() && compare == 0) {
             if (isDigit(first.charAt(fx)) && isDigit(second.charAt(sx))) {
                 int flen = getNumSequenceLength(first, fx);
@@ -75,7 +76,7 @@ public class NaturalSortComparator implements Comparator<CharSequence> {
                 if (flen == slen) {
                     for (int x = 0; x < flen && compare == 0; x++) {
                         /** the first difference in digit wins */
-                        compare = (first.charAt(fx++) - second.charAt(sx++));
+                        compare = first.charAt(fx++) - second.charAt(sx++);
                     }
                 } else {
                     compare = flen - slen;

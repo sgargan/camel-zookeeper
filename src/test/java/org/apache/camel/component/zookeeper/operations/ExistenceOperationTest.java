@@ -20,7 +20,7 @@ import org.apache.camel.component.zookeeper.ZooKeeperTestSupport;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 
-public class ExistenceOperationTest extends ZooKeeperTestSupport{
+public class ExistenceOperationTest extends ZooKeeperTestSupport {
 
     @Test
     public void okWhenNodeMustExistAndDoesExists() throws Exception {
@@ -37,7 +37,6 @@ public class ExistenceOperationTest extends ZooKeeperTestSupport{
         ExistsOperation exists = new ExistsOperation(connection, "/figment");
         assertFalse(exists.get().isOk());
     }
-
 
     @Test
     public void okWhenNodeMustNotExistAndDoesNotExists() throws Exception {

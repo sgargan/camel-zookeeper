@@ -30,7 +30,7 @@ import org.apache.zookeeper.data.Stat;
  */
 public class ZooKeeperMessage extends DefaultMessage {
 
-    public final static String ZOOKEEPER_NODE = "CamelZooKeeperPath";
+    public static final String ZOOKEEPER_NODE = "CamelZooKeeperPath";
 
     public static final String ZOOKEEPER_NODE_VERSION = "CamelZooKeeperVersion";
 
@@ -42,7 +42,6 @@ public class ZooKeeperMessage extends DefaultMessage {
 
     public static final String ZOOKEEPER_STATISTICS = "CamelZookeeperStatistics";
 
-   
     public ZooKeeperMessage(String path, Stat statistics) {
         this.setHeader(ZOOKEEPER_NODE, path);
         this.setHeader(ZOOKEEPER_STATISTICS, statistics);
@@ -50,7 +49,7 @@ public class ZooKeeperMessage extends DefaultMessage {
 
     public static Stat getStatistics(Message message) {
         Stat stats = null;
-        if(message != null) {
+        if (message != null) {
             stats = message.getHeader(ZOOKEEPER_STATISTICS, Stat.class);
         }
         return stats;
@@ -58,7 +57,7 @@ public class ZooKeeperMessage extends DefaultMessage {
 
     public static String getPath(Message message) {
         String path = null;
-        if(message != null) {
+        if (message != null) {
             path = message.getHeader(ZOOKEEPER_NODE, String.class);
         }
         return path;

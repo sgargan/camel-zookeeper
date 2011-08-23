@@ -21,45 +21,44 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
- * <code>ZookeeperConnectionManager</code> is a simple class to manage {@link ZooKeeper}
- * connections.
- *
+ * <code>ZookeeperConnectionManager</code> is a simple class to manage
+ * {@link ZooKeeper} connections.
+ * 
  * @author sgargan
  */
 public class ZooKeeperConnectionManager {
 
-    private final Log log = LogFactory.getLog(ZooKeeperConnectionManager.class);
+    private static final Log LOG = LogFactory.getLog(ZooKeeperConnectionManager.class);
 
-    public ZookeeperConnectionStrategy strategy;
+    private ZookeeperConnectionStrategy strategy;
 
-    public ZooKeeperConnectionManager(ZooKeeperEndpoint endpoint){
+    public ZooKeeperConnectionManager(ZooKeeperEndpoint endpoint) {
         strategy = new DefaultZookeeperConnectionStrategy(endpoint);
     }
 
-    public ZooKeeper getConnection()
-    {
+    public ZooKeeper getConnection() {
         return strategy.getConnection().getZooKeeper();
     }
 
     private interface ZookeeperConnectionStrategy {
-        public ConnectionHolder getConnection();
+        ConnectionHolder getConnection();
 
-        public void shutdown();
+        void shutdown();
     }
 
     private class DefaultZookeeperConnectionStrategy implements ZookeeperConnectionStrategy {
         private ConnectionHolder holder;
         private ZooKeeperConfiguration configuration;
 
-        public DefaultZookeeperConnectionStrategy(ZooKeeperEndpoint endpoint){
+        public DefaultZookeeperConnectionStrategy(ZooKeeperEndpoint endpoint) {
             this.configuration = endpoint.getConfiguration();
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Creating connection with static configuration of %s", configuration));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Creating connection with static configuration of %s", configuration));
             }
             holder = new ConnectionHolder(configuration);
         }
 
-        public ConnectionHolder getConnection(){
+        public ConnectionHolder getConnection() {
             return holder;
         }
 

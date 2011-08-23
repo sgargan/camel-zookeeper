@@ -18,9 +18,9 @@ package org.apache.camel.component.zookeeper.operations;
 
 import java.util.List;
 
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**

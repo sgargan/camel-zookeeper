@@ -43,11 +43,14 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
         ZookeeperPolicyEnforcedContext tetrisisMasterOfBlocks = createEnforcedContext("master");
         ZookeeperPolicyEnforcedContext slave = createEnforcedContext("slave");
 
-        // http://bit.ly/9gTlGe ;)
+        // http://bit.ly/9gTlGe ;). Send messages to the master and the slave.
+        // The route is enabled in the master and gets through, but that sent to
+        // the slave context is rejected.
         tetrisisMasterOfBlocks.sendMessageToEnforcedRoute("LIIIIIIIIIINNNNNNNNNEEEEEEE PEEEEEEICCCE", 1);
         slave.sendMessageToEnforcedRoute("But lord there is no place for a square!??!", 0);
 
-        // trigger failover by killing the master...
+        // trigger failover by killing the master... then assert that the slave
+        // can now receive messages.
         tetrisisMasterOfBlocks.shutdown();
         slave.sendMessageToEnforcedRoute("What a cruel and angry god...", 1);
     }
@@ -70,7 +73,7 @@ public class FailoverRoutePolicyTest extends ZooKeeperTestSupport {
         public void sendMessageToEnforcedRoute(String message, int expected) throws InterruptedException {
             mock.expectedMessageCount(expected);
             try {
-                template.sendBody("vm:"+routename, ExchangePattern.InOut, message);
+                template.sendBody("vm:" + routename, ExchangePattern.InOut, message);
             } catch (Exception e) {
                 if (expected > 0) {
                     fail("Expected messages...");

@@ -16,26 +16,26 @@
  */
 package org.apache.camel.component.zookeeper.operations;
 
-import static java.lang.String.format;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.lang.String.format;
+
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
  * <code>FutureEventDrivenOperation</code> uses ZooKeepers {@link Watcher}
- * mechanism to await specific ZooKeeper events. Typically this is used to await changes
- * to a particular node before retrieving the change.
+ * mechanism to await specific ZooKeeper events. Typically this is used to await
+ * changes to a particular node before retrieving the change.
  */
 public abstract class FutureEventDrivenOperation<ResultType> extends ZooKeeperOperation<ResultType> implements Watcher {
 
-     private EventType[] awaitedTypes;
+    private EventType[] awaitedTypes;
 
     private CountDownLatch waitForAnyWatchedType = new CountDownLatch(1);
 
@@ -49,8 +49,8 @@ public abstract class FutureEventDrivenOperation<ResultType> extends ZooKeeperOp
     public void process(WatchedEvent event) {
         this.event = event;
         EventType received = event.getType();
-        if (log.isDebugEnabled()) {
-            log.debug(format("Recieved event of type %s for node '%s'", received, event.getPath()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(format("Recieved event of type %s for node '%s'", received, event.getPath()));
         }
 
         for (EventType watched : awaitedTypes) {
@@ -60,16 +60,16 @@ public abstract class FutureEventDrivenOperation<ResultType> extends ZooKeeperOp
             }
         }
 
-        if (log.isTraceEnabled() && waitForAnyWatchedType.getCount() > 0) {
+        if (LOG.isTraceEnabled() && waitForAnyWatchedType.getCount() > 0) {
 
             StringBuilder b = new StringBuilder();
             for (EventType type : awaitedTypes) {
                 b.append(type).append(", ");
             }
-            if(b.length() > 0) {
+            if (b.length() > 0) {
                 b.setLength(b.length() - 2);
             }
-            log.trace(String.format("Recieved event of type %s did not match any watched types %s", received, awaitedTypes));
+            LOG.trace(String.format("Recieved event of type %s did not match any watched types %s", received, awaitedTypes));
         }
     }
 

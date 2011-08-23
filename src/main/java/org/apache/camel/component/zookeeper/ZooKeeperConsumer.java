@@ -16,10 +16,10 @@
  */
 package org.apache.camel.component.zookeeper;
 
-import static java.lang.String.format;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import static java.lang.String.format;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -70,8 +70,8 @@ public class ZooKeeperConsumer extends DefaultConsumer {
 
         initializeConsumer();
         executor = getEndpoint().getCamelContext().getExecutorServiceManager().newFixedThreadPool(configuration.getPath(), "Camel-Zookeeper Ops executor", 1);
-        OperationsExecutor OpsService = new OperationsExecutor();
-        executor.execute(OpsService);
+        OperationsExecutor opsService = new OperationsExecutor();
+        executor.execute(opsService);
     }
 
     @Override
@@ -127,7 +127,7 @@ public class ZooKeeperConsumer extends DefaultConsumer {
 
     private class OperationsExecutor implements Runnable {
 
-        private ZooKeeperOperation current = null;
+        private ZooKeeperOperation current;
 
         public void run() {
             while (isRunAllowed()) {

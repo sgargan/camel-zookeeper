@@ -31,7 +31,7 @@ public class ZookeeperRoutePolicyTest extends ZooKeeperTestSupport {
         client.createPersistent("/someapp", "App node to contain policy election nodes...");
         client.createPersistent("/someapp/somepolicy", "Policy node used by route policy to control routes...");
         context.addRoutes(new ZooKeeperPolicyEnforcedRoute());
-        
+
         MockEndpoint mock = getMockEndpoint("mock:controlled");
         mock.setExpectedMessageCount(1);
         sendBody("direct:policy-controlled", "This is a test");

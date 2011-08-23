@@ -35,11 +35,11 @@ public class GetDataOperation extends ZooKeeperOperation<byte[]> {
         try {
             Stat statistics = new Stat();
 
-            if (log.isDebugEnabled()) {
-                if (log.isTraceEnabled()) {
-                    log.trace(format("Received data from '%s' path with statistics '%s'", node, statistics));
+            if (LOG.isDebugEnabled()) {
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace(format("Received data from '%s' path with statistics '%s'", node, statistics));
                 } else {
-                    log.debug(format("Received data from '%s' path ", node));
+                    LOG.debug(format("Received data from '%s' path ", node));
                 }
             }
             return new OperationResult<byte[]>(connection.getData(node, true, statistics), statistics);

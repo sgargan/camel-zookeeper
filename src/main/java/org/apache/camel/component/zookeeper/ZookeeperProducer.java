@@ -1,5 +1,4 @@
 /**
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -7,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +17,6 @@
 package org.apache.camel.component.zookeeper;
 
 import static java.lang.String.format;
-import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getAclListFromMessage;
-import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getCreateMode;
-import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getNodeFromMessage;
-import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getPayloadFromExchange;
-import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getVersionFromMessage;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -32,11 +26,19 @@ import org.apache.camel.component.zookeeper.operations.OperationResult;
 import org.apache.camel.component.zookeeper.operations.SetDataOperation;
 import org.apache.camel.impl.DefaultProducer;
 import org.apache.camel.util.ExchangeHelper;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooKeeper;
+
 import org.apache.zookeeper.AsyncCallback.StatCallback;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getAclListFromMessage;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getCreateMode;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getNodeFromMessage;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getPayloadFromExchange;
+import static org.apache.camel.component.zookeeper.ZooKeeperUtils.getVersionFromMessage;
+
 
 /**
  * <code>ZookeeperProducer</code> attempts to set the content of nodes in the

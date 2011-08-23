@@ -16,9 +16,9 @@
  */
 package org.apache.camel.component.zookeeper.operations;
 
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -29,6 +29,8 @@ import org.apache.zookeeper.data.Stat;
 @SuppressWarnings("rawtypes")
 public class DataChangedOperation extends FutureEventDrivenOperation<byte[]> {
 
+    protected static final Class[] CONSTRUCTOR_ARGS = {ZooKeeper.class, String.class, boolean.class};
+    
     private boolean getChangedData;
 
     public DataChangedOperation(ZooKeeper connection, String znode, boolean getChangedData) {
@@ -48,10 +50,8 @@ public class DataChangedOperation extends FutureEventDrivenOperation<byte[]> {
         return getChangedData ? new GetDataOperation(connection, getNode()).getResult() : null;
     }
 
-    protected final static Class[] constructorArgs = {ZooKeeper.class, String.class, boolean.class};
-
     @Override
     public ZooKeeperOperation createCopy() throws Exception {
-        return getClass().getConstructor(constructorArgs).newInstance(new Object[] {connection, node, getChangedData});
+        return getClass().getConstructor(CONSTRUCTOR_ARGS).newInstance(new Object[] {connection, node, getChangedData});
     }
 }

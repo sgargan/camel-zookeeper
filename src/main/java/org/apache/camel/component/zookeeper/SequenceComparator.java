@@ -26,7 +26,7 @@ import org.apache.zookeeper.CreateMode;
  */
 public class SequenceComparator extends NaturalSortComparator {
 
-    public final static int ZookeeperSequenceLength = 10;
+    public static final int ZOOKEEPER_SEQUENCE_LENGTH = 10;
 
     @Override
     public int compare(CharSequence sequencedNode, CharSequence otherSequencedNode) {
@@ -44,6 +44,6 @@ public class SequenceComparator extends NaturalSortComparator {
 
     private CharSequence getZooKeeperSequenceNumber(CharSequence sequencedNodeName) {
         int len = sequencedNodeName.length();
-        return sequencedNodeName.subSequence(len - ZookeeperSequenceLength, len);
+        return sequencedNodeName.subSequence(len - ZOOKEEPER_SEQUENCE_LENGTH, len);
     }
 }

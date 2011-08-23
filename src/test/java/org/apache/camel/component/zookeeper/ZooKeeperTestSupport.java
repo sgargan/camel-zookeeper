@@ -49,26 +49,25 @@ import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-
 public class ZooKeeperTestSupport extends CamelTestSupport {
 
-    private static Logger log = Logger.getLogger(ZooKeeperTestSupport.class);
-
     protected static TestZookeeperServer server;
-
+    
     protected static TestZookeeperClient client;
 
-    protected String TestPayload = "This is a test";
+    private static final Logger LOG = Logger.getLogger(ZooKeeperTestSupport.class);
+ 
+    protected String testPayload = "This is a test";
 
-    protected byte[] TestPayloadBytes = TestPayload.getBytes();
-
+    protected byte[] testPayloadBytes = testPayload.getBytes();
+        
     @BeforeClass
     public static void setupTestServer() throws Exception {
-        log.info("Starting Zookeeper Test Infrastructure");
+        LOG.info("Starting Zookeeper Test Infrastructure");
         server = new TestZookeeperServer(getServerPort(), clearServerData());
         waitForServerUp("localhost:" + getServerPort(), 1000);
         client = new TestZookeeperClient(getServerPort(), getTestClientSessionTimeout());
-        log.info("Started Zookeeper Test Infrastructure on port "+getServerPort());
+        LOG.info("Started Zookeeper Test Infrastructure on port " + getServerPort());
     }
 
     public ZooKeeper getConnection() {
@@ -77,11 +76,11 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
 
     @AfterClass
     public static void shutdownServer() throws Exception {
-        log.info("Stopping Zookeeper Test Infrastructure");
+        LOG.info("Stopping Zookeeper Test Infrastructure");
         client.shutdown();
         server.shutdown();
         waitForServerDown("localhost:" + getServerPort(), 1000);
-        log.info("Stopped Zookeeper Test Infrastructure");
+        LOG.info("Stopped Zookeeper Test Infrastructure");
     }
 
     protected static int getServerPort() {
@@ -102,7 +101,6 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
 
         public TestZookeeperServer(int clientPort, boolean clearServerData) throws Exception {
 
-        
             if (clearServerData) {
                 File working = new File("./target/zookeeper");
                 deleteDir(working);
@@ -132,13 +130,14 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
 
     public static class TestZookeeperClient implements Watcher {
 
+        public static int x;
+
         private final Logger log = Logger.getLogger(getClass());
 
         private ZooKeeper zk;
 
         private CountDownLatch connected = new CountDownLatch(1);
 
-        public static int x;
 
         public TestZookeeperClient(int port, int timeout) throws Exception {
             zk = new ZooKeeper("localhost:" + port, timeout, this);
@@ -218,7 +217,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
                     return true;
                 }
             } catch (IOException e) {
-                log.info("server " + hp + " not up " + e);
+                LOG.info("server " + hp + " not up " + e);
             }
 
             if (System.currentTimeMillis() > start + timeout) {
@@ -332,7 +331,7 @@ public class ZooKeeperTestSupport extends CamelTestSupport {
         if (expected == null) {
             assertNull(client.getData(node));
         } else {
-            assertEquals( new String(expected), new String(client.getData(node)));
+            assertEquals(new String(expected), new String(client.getData(node)));
         }
     }
 }
